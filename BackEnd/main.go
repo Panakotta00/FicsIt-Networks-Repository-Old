@@ -17,12 +17,13 @@ import (
 var db *pgx.Conn
 
 func respondStruct(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
 		http.Error(w, "unable to dump response", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(status)
 }
 
 func getPackage(w http.ResponseWriter, r *http.Request) {

@@ -5,14 +5,18 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-type Package struct {
+type PackageLimited struct {
 	ID          uint64  `json:"id"`
 	Name        string  `json:"name"`
 	DisplayName string  `json:"displayName"`
 	Description string  `json:"description"`
 	SourceLink  *string `json:"sourceLink"`
 	CreatorID   uint64  `json:"creatorId"`
-	Verified    bool    `json:"verified"`
+}
+
+type Package struct {
+	PackageLimited
+	Verified bool `json:"verified"`
 }
 
 type PackageChange struct {
