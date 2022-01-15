@@ -1,0 +1,252 @@
+openapi: 3.0.0
+info:
+    version: '0.0.1'
+    title: 'FicsIt-Networks-Repository'
+servers:
+-   url: 'localhost:8000'
+paths:
+    /package/{packageId}:
+        parameters:
+        -   $ref: '#/components/parameters/packageId'
+        get:
+            summary: "Get Package Details by Package-ID"
+            description: 'Returns the detailed description of a Package.  If request was done as authenticated admin user, result will be the Package-Full version.'
+            operationId: getPackage
+            responses:
+                '200':
+                    description: 'Detailed description of the Package'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   $ref: '#/components/schemas/Package'
+                                -   $ref: '#/components/schemas/Package_Full'
+                default:
+                     $ref: '#/components/responses/UnexpectedError'
+    /package/{packageId}/tags:
+        parameters:
+            - $ref: '#/components/parameters/packageId'
+        get:
+            summary: "Get Tags of Package by Package-ID"
+            description: 'Returns the list of tags this package has'
+            operationId: getPackageTags
+            responses:
+                '200':
+                    description: 'A array of ids for all the different tags this package has. If request was done as authenticated admin user, result will be the Tag-Full version.'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Tag'
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Tag_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+    /release/{releaseId}:
+        parameters:
+            - $ref: '#/components/parameters/releaseId'
+        get:
+            summary: "Get Relase Detailes by Release-ID"
+            description: "Returns the detailed description of a Package. If request was done as authenticated admin user, result will be the Release-Full version."
+            operationId: getRelease
+            responses:
+                '200':
+                    description: "Detailed description of the Release"
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   $ref: '#/components/schemas/Release'
+                                -   $ref: '#/components/schemas/Release_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+    /tag/{tagId}:
+        parameters:
+            - $ref: '#/components/parameters/tagId'
+        get:
+            summary: "Get Tag Details by Tag-ID"
+            description: "Returns the detailed description of the tag with the given id. If the request was sent as authenticated admin user, the result will be of the Full-Type."
+            operationId: getTag
+            responses:
+                '200':
+                    description: 'Detailed description of the Tag'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   $ref: '#/components/schemas/Tag'
+                                -   $ref: '#/components/schemas/Tag_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+    /user/{userId}:
+        parameters:
+            - $ref: '#/components/parameters/userId'
+        get:
+            summary: "Get User Details by User-ID"
+            description: "Returns the detailed description of the user with the given id. If the request was sent as authenticated admin user, the result will be of the Full-Type."
+            operationId: getUser
+            responses:
+                '200':
+                    description: "Detailed description of the User"
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   $ref: '#/components/schemas/User'
+                                -   $ref: '#/components/schemas/User_Full'
+                default:
+                    $ref: '#/components/parameters/userId'
+components:
+    parameters:
+        packageId:
+            in: path
+            name: packageId
+            description: ID Reference to a Package
+            required: true
+            schema:
+                $ref: '#/components/schemas/Snowflake'
+        tagId:
+            in: path
+            name: tagId
+            description: ID reference to a tag
+            required: true
+            schema:
+                $ref: '#/components/schemas/Snowflake'
+        releaseId:
+            in: path
+            name: releaseId
+            description: ID reference to a release
+            required: true
+            schema:
+                $ref: '#/components/schemas/Snowflake'
+        userId:
+            in: path
+            name: userId
+            description: ID reference to a user
+            required: true
+            schema:
+                $ref: '#/components/schemas/Snowflake'
+    schemas:
+        Snowflake:
+            description: A integer holding a creation timestamp and additional information with which we identify differnt objects
+            type: integer
+            format: uint64
+        Package:
+            type: object
+            required:
+                - id
+                - name
+            properties:
+                id:
+                    $ref: '#/components/parameters/packageId'
+                name:
+                    type: string
+                    description: "A more internal but still human readable name of this package. Can be used as f.e. URL segment."
+                displayname:
+                    type: string
+                    description: "Final human readable name of the package."
+                description:
+                    type: string
+                    description: "Asciidoc encoded description of the package"
+                sourceLink:
+                    type: string
+                    description: "Optional link to general source-code, like a GitHub repository"
+                creatorId:
+                    $ref: '#/components/parameters/userId'
+                    description: "Id referencing the User that created and owns the package"
+        Package_Full:
+            allOf:
+            -   $ref: '#/components/schemas/Package'
+            -   type: object
+                required:
+                    - verified
+                properties:
+                    verfied:
+                        type: boolean
+                        description: "Defines if a newly created package is visible to the public or if it awaits approval from Moderators"
+        Tag:
+            type: object
+            required:
+                - id
+                - name
+                - description
+            properties:
+                id:
+                    $ref: '#/components/parameters/tagId'
+                name:
+                    type: string
+                    description: "The display name of this tag"
+                description:
+                    type: string
+                    description: "Asciidoc encoded description of this tag"
+        Tag_Full:
+            allOf:
+            -   $ref: '#/components/schemas/Tag'
+            -   type: object
+                required:
+                    - verified
+                properties:
+                    verified:
+                        type: boolean
+                        description: "Defines if a tag is approved for public used, usually true, except when Tag is newly created and not approved by an moderator yet"
+        User:
+            type: object
+            required:
+                - id
+                - name
+                - bio
+                - admin
+            properties:
+                id:
+                    $ref: '#/components/parameters/userId'
+                name:
+                    type: string
+                    description: "The name of this user"
+                bio:
+                    type: string
+                    description: "The short biography of the user"
+                admin:
+                    type: boolean
+                    description: "True if the user is a Admin/Moderator"
+        User_Full:
+            allOf:
+            -   $ref: '#/componets/schemas/User'
+            -   type: object
+                required:
+                    - email
+                    - verified
+                properties:
+                    email:
+                        type: string
+                        description: "the email of the user"
+                    verified:
+                        type: boolean
+                        description: "Defines if the user is approved for public use, usually true, except when the User is newly created and not approved by an moderator yet"
+
+        Error:
+            type: object
+            required:
+                - code
+                - message
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+    responses:
+        UnexpectedError:
+            description: Unexpected error
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/responses/UnexpectedError'
+    securitySchemes:
+        BasicAuth:
+            type: http
+            scheme: basic
+security:
+- BasicAuth: []
