@@ -18,9 +18,8 @@ import (
 
 var db *gorm.DB
 
-func getPackages(c echo.Context) error {
-	page := Util.GetDefaultInt(c, "page", 0)
-	count := Util.GetIntRange(c, "count", 1, 100, 50)
+func listPackages(c echo.Context) error {
+	page, count := Util.GetPagination(c)
 	packages, err := Database.ListPackages(db, page, count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list packages")
@@ -29,7 +28,7 @@ func getPackages(c echo.Context) error {
 }
 
 func getPackage(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := Util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
 	}
@@ -41,7 +40,7 @@ func getPackage(c echo.Context) error {
 }
 
 func getPackageTags(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := Util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
 	}
@@ -52,8 +51,29 @@ func getPackageTags(c echo.Context) error {
 	return c.JSON(http.StatusOK, *tags)
 }
 
+func listPackageReleases(c echo.Context) error {
+	id, err := Util.GetSnowflake(c, "id")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
+	}
+	page, count := Util.GetPagination(c)
+	releases, err := Database.ListPackageReleases(db, id, page, count)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "package not found")
+	}
+	return c.JSON(http.StatusOK, *releases)
+}
+
+func getTags(c echo.Context) error {
+	tags, err := Database.GetTags(db)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to get all tags")
+	}
+	return c.JSON(http.StatusOK, tags)
+}
+
 func getTag(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := Util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid tag-id format")
 	}
@@ -65,7 +85,7 @@ func getTag(c echo.Context) error {
 }
 
 func getRelease(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := Util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid release-id format")
 	}
@@ -76,8 +96,17 @@ func getRelease(c echo.Context) error {
 	return c.JSON(http.StatusOK, release)
 }
 
+func listUsers(c echo.Context) error {
+	page, count := Util.GetPagination(c)
+	users, err := Database.ListUsers(db, page, count)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list users")
+	}
+	return c.JSON(http.StatusOK, *users)
+}
+
 func getUser(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := Util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid user-id format")
 	}
@@ -158,11 +187,14 @@ func main() {
 
 	e := echo.New()
 
-	e.GET("/package", getPackages)
+	e.GET("/package", listPackages)
 	e.GET("/package/:id", getPackage)
 	e.GET("/package/:id/tags", getPackageTags)
+	e.GET("/package/:id/releases", listPackageReleases)
 	e.GET("/release/:id", getRelease)
+	e.GET("/tag", getTags)
 	e.GET("/tag/:id", getTag)
+	e.GET("/user", listUsers)
 	e.GET("/user/:id", getUser)
 
 	e.Logger.Fatal(e.Start(":8000"))

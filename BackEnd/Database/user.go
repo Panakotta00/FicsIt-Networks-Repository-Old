@@ -2,6 +2,7 @@ package Database
 
 import (
 	"gorm.io/gorm"
+	"main/Util"
 )
 
 type User struct {
@@ -27,6 +28,14 @@ type UserChange struct {
 
 func (UserChange) TableName() string {
 	return "Repository.User_Change"
+}
+
+func ListUsers(db *gorm.DB, page int, count int) (*[]*User, error) {
+	var users *[]*User
+	if err := db.Scopes(Util.Paginate(page, count)).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func UserGet(db *gorm.DB, userId uint64) (*User, error) {

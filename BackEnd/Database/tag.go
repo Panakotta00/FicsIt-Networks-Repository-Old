@@ -16,6 +16,14 @@ func (Tag) TableName() string {
 	return "Repository.Tag"
 }
 
+func GetTags(db *gorm.DB) (*[]*Tag, error) {
+	var tags *[]*Tag
+	if err := db.Find(&tags).Error; err != nil {
+		return nil, err
+	}
+	return tags, nil
+}
+
 func TagGet(db *gorm.DB, tagID uint64) (*Tag, error) {
 	tag := new(Tag)
 	if err := db.First(tag, tagID).Error; err != nil {

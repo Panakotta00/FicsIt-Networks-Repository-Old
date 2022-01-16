@@ -22,3 +22,17 @@ func GetIntRange(c echo.Context, param string, min int, max int, fallback int) i
 	}
 	return val
 }
+
+func GetPagination(c echo.Context) (int, int) {
+	page := GetDefaultInt(c, "page", 0)
+	if page < 0 {
+		page = 0
+	}
+	count := GetIntRange(c, "count", 1, 100, 50)
+	return page, count
+}
+
+func GetSnowflake(c echo.Context, param string) (uint64, error) {
+	id, err := strconv.ParseUint(c.Param(param), 10, 64)
+	return id, err
+}

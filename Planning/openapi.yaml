@@ -5,6 +5,30 @@ info:
 servers:
 -   url: 'localhost:8000'
 paths:
+    /package:
+        parameters:
+        -   $ref: '#/components/parameters/pageNr'
+        -   $ref: '#/components/parameters/pageSize'
+        get:
+            summary: "List Packages"
+            description: "Returns a list of pacakges that are within the given page. Uses Full type if request was authenticated by admin user."
+            operationId: listPackages
+            responses:
+                '200':
+                    description: 'List of detailed packages in given page'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Package'
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Package_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+
     /package/{packageId}:
         parameters:
         -   $ref: '#/components/parameters/packageId'
@@ -27,7 +51,7 @@ paths:
         parameters:
             - $ref: '#/components/parameters/packageId'
         get:
-            summary: "Get Tags of Package by Package-ID"
+            summary: "Get Package Tags by Package-ID"
             description: 'Returns the list of tags this package has'
             operationId: getPackageTags
             responses:
@@ -43,6 +67,30 @@ paths:
                                 -   type: array
                                     items:
                                         $ref: '#/components/schemas/Tag_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+    /package/{packageId}/releases:
+        parameters:
+        -   $ref: '#/components/parameters/packageId'
+        -   $ref: '#/components/parameters/pageNr'
+        -   $ref: '#/components/parameters/pageSize'
+        get:
+            summary: "List Package Releases"
+            description: "Returns a list of releases that are within the given page of given package"
+            operationId: listPackageReleases
+            responses:
+                '200':
+                    description: 'List of detailed releases in given page of given package. Uses Full type if request was authenticated by admin user.'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Release'
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Release_Full'
                 default:
                     $ref: '#/components/responses/UnexpectedError'
     /release/{releaseId}:
@@ -63,6 +111,26 @@ paths:
                                 -   $ref: '#/components/schemas/Release_Full'
                 default:
                     $ref: '#/components/responses/UnexpectedError'
+    /tag:
+        get:
+            summary: "Get Tags"
+            description: "Returns a all available tags. Uses Full type if request was authenticated by admin user."
+            operationId: getTags
+            responses:
+                '200':
+                    description: 'Array of detailed tags'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Tag'
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/Tag_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
     /tag/{tagId}:
         parameters:
             - $ref: '#/components/parameters/tagId'
@@ -79,6 +147,29 @@ paths:
                                 oneOf:
                                 -   $ref: '#/components/schemas/Tag'
                                 -   $ref: '#/components/schemas/Tag_Full'
+                default:
+                    $ref: '#/components/responses/UnexpectedError'
+    /user:
+        parameters:
+        -   $ref: '#/components/parameters/pageNr'
+        -   $ref: '#/components/parameters/pageSize'
+        get:
+            summary: "List Users"
+            description: "Returns a list of users that are within the given page. Uses Full type if request was authenticated by admin user."
+            operationId: listUsers
+            responses:
+                '200':
+                    description: 'List of detailed users in given page'
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/User'
+                                -   type: array
+                                    items:
+                                        $ref: '#/components/schemas/User_Full'
                 default:
                     $ref: '#/components/responses/UnexpectedError'
     /user/{userId}:
@@ -129,6 +220,23 @@ components:
             required: true
             schema:
                 $ref: '#/components/schemas/Snowflake'
+        pageNr:
+            in: query
+            name: page
+            description: The page number you want to list
+            schema:
+                type: integer
+                default: 0
+                minimum: 0
+        pageSize:
+            in: query
+            name: count
+            description: The count of entries on a page
+            schema:
+                type: integer
+                default: 50
+                minimum: 1
+                maximum: 100
     schemas:
         Snowflake:
             description: A integer holding a creation timestamp and additional information with which we identify differnt objects

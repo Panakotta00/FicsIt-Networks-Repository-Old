@@ -70,3 +70,11 @@ func PackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
 	}
 	return &pack.Tags, nil
 }
+
+func ListPackageReleases(db *gorm.DB, packageId uint64, page int, count int) (*[]*Release, error) {
+	var releases *[]*Release
+	if err := db.Scopes(Util.Paginate(page, count)).Where("package_id = ?", packageId).Find(&releases).Error; err != nil {
+		return nil, err
+	}
+	return releases, nil
+}
