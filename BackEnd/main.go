@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"gorm.io/driver/postgres"
@@ -178,12 +177,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tags, err := Database.PackageTags(db, 123)
-	if err != nil {
-		log.Fatal(err)
-	}
-	data, err := json.Marshal(tags)
-	log.Println(string(data))
+
 
 	e := echo.New()
 
