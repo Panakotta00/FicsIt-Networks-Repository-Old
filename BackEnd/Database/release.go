@@ -1,35 +1,32 @@
 package Database
 
 import (
-	"context"
-	"github.com/jackc/pgx/v4"
+	"gorm.io/gorm"
 )
 
 type Release struct {
-	ID          uint64 `json:"id"`
-	Package     uint64 `json:"package"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	SourceLink  string `json:"sourceLink"`
-	Version     string `json:"version"`
-	FINVersion  string `json:"finVersion"`
-	Verified    bool   `json:"verified"`
-	Hash        string `json:"hash"`
+	ID          uint64   `json:"id" gorm:"column:release_id;not null;primaryKey"`
+	PackageID   uint64   `json:"packageId" gorm:"column:package_id;not null"`
+	Name        string   `json:"name" gorm:"column:release_name;not null"`
+	Description string   `json:"description" gorm:"column:release_description;not null"`
+	SourceLink  string   `json:"sourceLink" gorm:"column:release_source_link;not null"`
+	Version     string   `json:"version" gorm:"column:release_version;not null"`
+	FINVersion  string   `json:"finVersion" gorm:"column:release_fin_version;not null"`
+	Verified    bool     `json:"verified" gorm:"column:release_verified;not null;default:false"`
+	Hash        string   `json:"hash" gorm:"column:release_hash;not null"`
+	Package     *Package `json:"package,omitempty" gorm:"foreignKey:PackageID"`
 }
 
 type ReleaseChange struct {
-	ID          uint64  `json:"id""`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
+	ID          uint64  `json:"id" gorm:"column:release_change_id;not null;primaryKey"`
+	Name        *string `json:"name" gorm:"column:release_name"`
+	Description *string `json:"description" gorm:"column:release_description"`
+	Release     *Release `json:"release,omitempty" gorm:"foreignKey:release_change_id"`
 }
 
-func ReleaseGet(db *pgx.Conn, releaseId uint64) (*Release, error) {
+func ReleaseGet(db *gorm.DB, releaseId uint64) (*Release, error) {
 	release := new(Release)
-	err := db.QueryRow(context.Background(),
-		`SELECT release_id, package_id, release_name, release_description, release_source_link, release_version, release_fin_version, release_verified, release_hash
-			FROM "Repository"."Release" WHERE release_id=$1`, releaseId,
-	).Scan(&release.ID, &release.Package, &release.Name, &release.Description, &release.SourceLink, &release.Version, &release.FINVersion, &release.Verified, &release.Hash)
-	if err != nil {
+	if err := db.First(&release, releaseId).Error; err != nil {
 		return nil, err
 	}
 	return release, nil

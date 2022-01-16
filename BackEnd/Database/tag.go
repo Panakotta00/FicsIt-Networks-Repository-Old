@@ -1,8 +1,7 @@
 package Database
 
 import (
-	"context"
-	"github.com/jackc/pgx/v4"
+	"gorm.io/gorm"
 )
 
 type Tag struct {
@@ -17,13 +16,9 @@ func (Tag) TableName() string {
 	return "Repository.Tag"
 }
 
-func TagGet(db *pgx.Conn, packageID uint64) (*Tag, error) {
+func TagGet(db *gorm.DB, tagID uint64) (*Tag, error) {
 	tag := new(Tag)
-	err := db.QueryRow(context.Background(),
-		`SELECT tag_id, tag_name, tag_description, tag_verified
-			FROM "Repository"."Tag" WHERE tag_id=$1`, packageID,
-	).Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Verified)
-	if err != nil {
+	if err := db.First(tag, tagID).Error; err != nil {
 		return nil, err
 	}
 	return tag, nil

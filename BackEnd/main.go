@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/schema"
 	"log"
 	"main/Database"
+	"main/Util"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,6 +17,16 @@ import (
 )
 
 var db *gorm.DB
+
+func getPackages(c echo.Context) error {
+	page := Util.GetDefaultInt(c, "page", 0)
+	count := Util.GetIntRange(c, "count", 1, 100, 50)
+	packages, err := Database.ListPackages(db, page, count)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list packages")
+	}
+	return c.JSON(http.StatusOK, packages)
+}
 
 func getPackage(c echo.Context) error {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -41,7 +52,7 @@ func getPackageTags(c echo.Context) error {
 	return c.JSON(http.StatusOK, *tags)
 }
 
-/*func getTag(c echo.Context) error {
+func getTag(c echo.Context) error {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid tag-id format")
@@ -75,7 +86,7 @@ func getUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
 	return c.JSON(http.StatusOK, user)
-}*/
+}
 
 type CustomNamer struct {
 	schema.NamingStrategy
@@ -133,11 +144,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&Database.User{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.AutoMigrate(&Database.Package{})
+	err = db.AutoMigrate(&Database.User{}, &Database.UserChange{}, &Database.Package{}, &Database.PackageChange{}, &Database.Tag{}, &Database.Release{}, &Database.ReleaseChange{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,11 +158,12 @@ func main() {
 
 	e := echo.New()
 
+	e.GET("/package", getPackages)
 	e.GET("/package/:id", getPackage)
 	e.GET("/package/:id/tags", getPackageTags)
-	/*e.GET("/release/:id", getRelease)
+	e.GET("/release/:id", getRelease)
 	e.GET("/tag/:id", getTag)
-	e.GET("/user/:id", getUser)*/
+	e.GET("/user/:id", getUser)
 
 	e.Logger.Fatal(e.Start(":8000"))
 }
