@@ -198,28 +198,28 @@ components:
             description: ID Reference to a Package
             required: true
             schema:
-                $ref: '#/components/schemas/Snowflake'
+                $ref: '#/components/schemas/packageId'
         tagId:
             in: path
             name: tagId
             description: ID reference to a tag
             required: true
             schema:
-                $ref: '#/components/schemas/Snowflake'
+                $ref: '#/components/schemas/tagId'
         releaseId:
             in: path
             name: releaseId
             description: ID reference to a release
             required: true
             schema:
-                $ref: '#/components/schemas/Snowflake'
+                $ref: '#/components/schemas/releaseId'
         userId:
             in: path
             name: userId
             description: ID reference to a user
             required: true
             schema:
-                $ref: '#/components/schemas/Snowflake'
+                $ref: '#/components/schemas/userId'
         pageNr:
             in: query
             name: page
@@ -238,10 +238,22 @@ components:
                 minimum: 1
                 maximum: 100
     schemas:
-        Snowflake:
+        snowflake:
             description: A integer holding a creation timestamp and additional information with which we identify differnt objects
             type: integer
             format: uint64
+        packageId:
+            $ref: '#/components/schemas/snowflake'
+            description: ID Reference to a Package
+        tagId:
+            $ref: '#/components/schemas/snowflake'
+            description: ID reference to a tag
+        releaseId:
+            $ref: '#/components/schemas/snowflake'
+            description: ID reference to a release
+        userId:
+            description: ID reference to a user
+            $ref: '#/components/schemas/snowflake'
         Package:
             type: object
             required:
@@ -249,7 +261,7 @@ components:
                 - name
             properties:
                 id:
-                    $ref: '#/components/parameters/packageId'
+                    $ref: '#/components/schemas/packageId'
                 name:
                     type: string
                     description: "A more internal but still human readable name of this package. Can be used as f.e. URL segment."
@@ -263,7 +275,7 @@ components:
                     type: string
                     description: "Optional link to general source-code, like a GitHub repository"
                 creatorId:
-                    $ref: '#/components/parameters/userId'
+                    $ref: '#/components/schemas/userId'
                     description: "Id referencing the User that created and owns the package"
         Package_Full:
             allOf:
@@ -283,7 +295,7 @@ components:
                 - description
             properties:
                 id:
-                    $ref: '#/components/parameters/tagId'
+                    $ref: '#/components/schemas/tagId'
                 name:
                     type: string
                     description: "The display name of this tag"
@@ -309,7 +321,7 @@ components:
                 - admin
             properties:
                 id:
-                    $ref: '#/components/parameters/userId'
+                    $ref: '#/components/schemas/userId'
                 name:
                     type: string
                     description: "The name of this user"
