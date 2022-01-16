@@ -1,22 +1,27 @@
 package Database
 
 import (
-	"context"
-	"github.com/jackc/pgx/v4"
+	"gorm.io/gorm"
 )
 
 type PackageLimited struct {
-	ID          uint64  `json:"id"`
-	Name        string  `json:"name"`
-	DisplayName string  `json:"displayName"`
-	Description string  `json:"description"`
-	SourceLink  *string `json:"sourceLink"`
-	CreatorID   uint64  `json:"creatorId"`
+	ID          uint64  `json:"id" gorm:";column:package_id;not null;primaryKey"`
+	Name        string  `json:"name" gorm:"column:package_name;not null;unique"`
+	DisplayName string  `json:"displayName" gorm:"column:package_displayname;not null"`
+	Description string  `json:"description" gorm:"column:package_description;not null"`
+	SourceLink  *string `json:"sourceLink" gorm:"column:package_sourcelink;"`
+	CreatorID   uint64  `json:"creatorId" gorm:"column:package_creator_id;not null"`
+	CreatorS    *User   `json:"creator,omitempty" gorm:"foreignKey:CreatorID"`
+	Tags        []*Tag  `json:"tags,omitempty" gorm:"many2many:Package_Tag;foreignKey:package_id;joinForeignKey:package_id;References:tag_id;joinReferences:tag_id"`
+}
+
+func (PackageLimited) TableName() string {
+	return "Repository.Package"
 }
 
 type Package struct {
 	PackageLimited
-	Verified bool `json:"verified"`
+	Verified bool `json:"verified" gorm:"column:package_verified;not null;default:false"`
 }
 
 type PackageChange struct {
@@ -28,43 +33,26 @@ type PackageChange struct {
 }
 
 type PackageTag struct {
-	RepositoryID uint64 `json:"repositoryId"`
-	TagID        uint64 `json:"tagId"`
+	PackageID uint64 `json:"packageId" gorm:";column:package_id;primaryKey"`
+	TagID     uint64 `json:"tagId" gorm:"column:tag_id;primaryKey"`
 }
 
-func PackageGet(db *pgx.Conn, packageID uint64) (*Package, error) {
+func (PackageTag) TableName() string {
+	return "Repository.Package_Tag"
+}
+
+func PackageGet(db *gorm.DB, packageID uint64) (*Package, error) {
 	pack := new(Package)
-	err := db.QueryRow(context.Background(),
-		`SELECT package_id, package_name, package_displayname, package_description, package_creator_id, package_sourcelink, package_verified
-			FROM "Repository"."Package" WHERE package_id=$1`, packageID,
-	).Scan(&pack.ID, &pack.Name, &pack.DisplayName, &pack.Description, &pack.CreatorID, &pack.SourceLink, &pack.Verified)
-	if err != nil {
+	if err := db.First(&pack, packageID).Error; err != nil {
 		return nil, err
 	}
 	return pack, nil
 }
 
-func PackageTags(db *pgx.Conn, packageId uint64) (*[]Tag, error) {
-	rows, err := db.Query(context.Background(), `
-		WITH tags AS (
-			SELECT tag_id
-			FROM "Repository"."Package_Tag"
-			WHERE package_id=$1
-		)
-		SELECT tag_id, tag_name, tag_description, tag_verified
-		FROM "Repository"."Tag"
-		WHERE "Tag".tag_id IN (SELECT * FROM tags)`, packageId)
-	if err != nil {
+func PackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
+	var pack Package
+	if err := db.Preload("Tags").Select("ID").First(&pack, packageId).Error; err != nil {
 		return nil, err
 	}
-	tags := make([]Tag, 0)
-	for rows.Next() {
-		var tag Tag
-		err = rows.Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Verified)
-		if err != nil {
-			continue
-		}
-		tags = append(tags, tag)
-	}
-	return &tags, nil
+	return &pack.Tags, nil
 }

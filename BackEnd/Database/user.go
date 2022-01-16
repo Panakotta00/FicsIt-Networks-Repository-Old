@@ -6,13 +6,17 @@ import (
 )
 
 type User struct {
-	ID          uint64  `json:"id"`
-	Name        string  `json:"name"`
-	Bio         string  `json:"bio"`
-	GoogleToken *string `json:"googleToken"`
-	Admin       bool    `json:"admin"`
-	EMail       string  `json:"email"`
-	Verified    bool    `json:"verified"`
+	ID          uint64  `json:"id" gorm:";column:user_id;not null;primaryKey"`
+	Name        string  `json:"name" gorm:"column:user_name;not null"`
+	Bio         string  `json:"bio" gorm:"column:user_bio;not null"`
+	GoogleToken *string `json:"googleToken" gorm:"column:user_google_token"`
+	Admin       bool    `json:"admin" gorm:"column:user_admin;not nullM;default:false"`
+	EMail       string  `json:"email" gorm:"column:user_email;not null"`
+	Verified    bool    `json:"verified" gorm:"column:user_verified;not null;default:false"`
+}
+
+func (User) TableName() string {
+	return "Repository.User"
 }
 
 type UserChange struct {
