@@ -15,6 +15,6 @@
     {#each packages as pack}
         <PackagePreview packageStruct={pack} />
     {/each}
-{:catch}
+{:catch _}
     <h1>Failed to fetch packages!</h1>
 {/await}

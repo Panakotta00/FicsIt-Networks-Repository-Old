@@ -17,7 +17,8 @@
 {#await getData()}
     <h1>Loading...</h1>
 {:then data}
-    <h1>Package: {data.name}</h1>
+    <h1>{data.displayName}</h1>
+    <p>{data.description}</p>
 {:catch err}
     <h1>Failed to Load!</h1>
 {/await}
