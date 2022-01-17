@@ -1,2 +1,20 @@
+<script lang="ts">
+    import PackagePreview from "../components/PackagePreview.svelte";
+    import {listPackages, Package} from "$lib/api.ts";
+
+    async function getData() : Promise<Package[]> {
+        return await listPackages(0, 50)
+    }
+</script>
+
 <h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+
+{#await listPackages()}
+    <h1>Loading...</h1>
+{:then packages}
+    {#each packages as pack}
+        <PackagePreview packageStruct={pack} />
+    {/each}
+{:catch}
+    <h1>Failed to fetch packages!</h1>
+{/await}
