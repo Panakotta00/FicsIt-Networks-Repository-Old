@@ -13,7 +13,9 @@
     <h1>Loading...</h1>
 {:then packages}
     {#each packages as pack}
-        <PackagePreview packageStruct={pack} />
+        <a href="/package/{pack.name}">
+            <PackagePreview packageStruct={pack} />
+        </a>
     {/each}
 {:catch _}
     <h1>Failed to fetch packages!</h1>
