@@ -2,6 +2,7 @@ package Database
 
 import (
 	"gorm.io/gorm"
+	"log"
 	"main/Util"
 )
 
@@ -55,15 +56,24 @@ func ListPackages(db *gorm.DB, page int, count int) (*[]*Package, error) {
 	return packages, nil
 }
 
-func PackageGet(db *gorm.DB, packageID uint64) (*Package, error) {
+func GetPackageByID(db *gorm.DB, packageId uint64) (*Package, error) {
 	pack := new(Package)
-	if err := db.First(&pack, packageID).Error; err != nil {
+	if err := db.First(&pack, packageId).Error; err != nil {
 		return nil, err
 	}
 	return pack, nil
 }
 
-func PackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
+func GetPackageByName(db *gorm.DB, packageName string) (*Package, error) {
+	var pack *Package
+	if err := db.Where("package_name = ?", packageName).First(&pack).Error; err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return pack, nil
+}
+
+func GetPackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
 	var pack Package
 	if err := db.Preload("Tags").Select("ID").First(&pack, packageId).Error; err != nil {
 		return nil, err

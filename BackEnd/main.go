@@ -29,10 +29,12 @@ func listPackages(c echo.Context) error {
 
 func getPackage(c echo.Context) error {
 	id, err := Util.GetSnowflake(c, "id")
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
+	var pack *Database.Package
+	if err == nil {
+		pack, err = Database.GetPackageByID(db, id)
+	} else {
+		pack, err = Database.GetPackageByName(db, c.Param("id"))
 	}
-	pack, err := Database.PackageGet(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "package not found")
 	}
@@ -44,7 +46,7 @@ func getPackageTags(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
 	}
-	tags, err := Database.PackageTags(db, id)
+	tags, err := Database.GetPackageTags(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "package not found")
 	}
@@ -177,8 +179,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-
 
 	e := echo.New()
 
