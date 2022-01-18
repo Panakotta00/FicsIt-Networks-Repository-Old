@@ -39,6 +39,7 @@
 
 <script lang="ts">
     import TagList from "../../components/TagList.svelte";
+    import Card, { Content } from '@smui/card';
 
     export let packageStruct : Package_Base = null
     export let authorStruct : User_Base = null
@@ -51,5 +52,8 @@
     <p>Source: <a href="{packageStruct.sourceLink}">{packageStruct.sourceLink}</a></p>
 {/if}
 <p>By: <a href="/user/{authorStruct.name}">{authorStruct.name}</a></p>
-<TagList bind:tags={packageTags} editable=true />
 <TagList bind:tags={packageTags} />
+Editable:
+<Card padded class="m-3 w-100">
+<TagList bind:tags={packageTags} editable=true />
+</Card>
