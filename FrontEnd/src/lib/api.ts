@@ -1,35 +1,35 @@
 export class Package_Base {
-    id : bigint
-    name : string
-    displayName : string
-    description : string
-    sourceLink : string
-    creatorId : bigint
+    id = -1
+    name = ""
+    displayName = ""
+    description = ""
+    sourceLink = ""
+    creatorId = -1
 }
 
 export class Package extends Package_Base {
-    verified : boolean
+    verified = false
 }
 
 export class Tag_Base {
-    id : bigint
-    name : string
-    description : string
+    id = -1
+    name = ""
+    description = ""
 }
 
 export class Tag extends Tag_Base {
-    verified : boolean
+    verified = false
 }
 
 export class User_Base {
-    id : bigint
-    name : string
-    bio : string
-    admin : boolean
+    id = -1
+    name = ""
+    bio = ""
+    admin = false
 }
 
 export class User extends User_Base {
-    verified : boolean
+    verified = false
 }
 
 export type PackageRef = bigint|string;
@@ -60,7 +60,7 @@ export const getPackageTags = async (packageId : bigint) : Promise<Tag_Base[]> =
 }
 
 export const getUser = async(userId : bigint) : Promise<User> => {
-    const res = await fetch(apiURL(`package/${userId}`))
+    const res = await fetch(apiURL(`user/${userId}`))
     if (!res.ok) throw new Error('Bad response')
     const user = await res.json()
     return user as User

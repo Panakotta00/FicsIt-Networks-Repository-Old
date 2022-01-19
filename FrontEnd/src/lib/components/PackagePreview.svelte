@@ -1,11 +1,10 @@
 <script lang="ts">
-    import {getPackage, listPackages, Package} from "$lib/api.ts";
-    import {onMount} from "svelte";
+    import {getPackage, Package, Package_Base} from "$lib/api";
 
     export let packageId : null|bigint = null
     export let packageStruct : null|Package = null
 
-    async function getData() : Promise<Package> {
+    async function getData() : Promise<Package_Base> {
         if (packageStruct) {
             return packageStruct
         } else {

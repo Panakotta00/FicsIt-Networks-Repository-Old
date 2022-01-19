@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import {getPackage, getPackageTags, getUser, Package_Base, Tag_Base, User_Base} from "$lib/api";
 
-    export async function load({ params, fetch }) {
+    export async function load({ params }) {
         var pack : Package_Base|null = null
         var author : User_Base|null = null
         var tags : Tag_Base[]|null = null
@@ -28,32 +28,13 @@
         }
 
         return {
-            props: {
-                packageStruct: pack,
-                authorStruct: author,
-                packageTags: tags,
+            stuff: {
+                pack: pack,
+                author: author,
+                tags: tags,
             }
         }
     }
 </script>
 
-<script lang="ts">
-    import TagList from "../../components/TagList.svelte";
-    import Card, { Content } from '@smui/card';
-
-    export let packageStruct : Package_Base = null
-    export let authorStruct : User_Base = null
-    export let packageTags : Tag_Base[] = null
-</script>
-
-<h1>{packageStruct.displayName}</h1>
-<p>{packageStruct.description}</p>
-{#if packageStruct.sourceLink}
-    <p>Source: <a href="{packageStruct.sourceLink}">{packageStruct.sourceLink}</a></p>
-{/if}
-<p>By: <a href="/user/{authorStruct.name}">{authorStruct.name}</a></p>
-<TagList bind:tags={packageTags} />
-Editable:
-<Card padded class="m-3 w-100">
-<TagList bind:tags={packageTags} editable=true />
-</Card>
+<slot />

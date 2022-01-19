@@ -109,9 +109,9 @@
     <Set class="tagList" chips={tags} let:chip key={tag => tag.name} nonInteractive>
         <Chip {chip} shouldRemoveOnTrailingIconClick=true on:SMUIChip:removal={() => {tags = tags; setTimeout(() => getFocus(), 100)}}>
             <Text>{chip.name}</Text>
-    {#if editable}
-            <TrailingAction icon$class="material-icons">cancel</TrailingAction>
-    {/if}
+            {#if editable}
+                <TrailingAction icon$class="material-icons">cancel</TrailingAction>
+            {/if}
         </Chip>
     </Set>
     {#if editable}

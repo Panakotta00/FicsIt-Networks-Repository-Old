@@ -1,5 +1,5 @@
 <script lang="ts">
-    import PackagePreview from "../components/PackagePreview.svelte";
+    import PackagePreview from "../lib/components/PackagePreview.svelte";
     import {listPackages, Package} from "$lib/api.ts";
 
     async function getData() : Promise<Package[]> {
