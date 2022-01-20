@@ -12,15 +12,17 @@
 <Textfield bind:value={pack.displayName} label="Display-Name">
     <HelperText slot="helper">Human-Readable Display-Name of your package that is shown in UI</HelperText>
 </Textfield>
-<Textfield
-        style="width: 100%;"
-        helperLine$style="width: 100%;"
-        textarea
-        bind:value={pack.description}
-        label="Description"
->
-    <HelperText slot="helper">Markdown formatted description of your package</HelperText>
-</Textfield>
+<div class="margins">
+    <Textfield
+            style="width: 100%;"
+            helperLine$style="width: 100%;"
+            textarea
+            bind:value={pack.description}
+            label="Description"
+    >
+        <HelperText slot="helper">Markdown formatted description of your package</HelperText>
+    </Textfield>
+</div>
 <Textfield bind:value={pack.sourceLink} label="Source-URL">
     <HelperText slot="helper">Optional URL to your source repository like GitHub-Repository</HelperText>
 </Textfield>

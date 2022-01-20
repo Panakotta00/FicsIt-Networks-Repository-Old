@@ -13,6 +13,7 @@
     }
 </script>
 <script>
+    import Button, {Label} from '@smui/button';
     import PackageEdit from "$lib/components/PackageEdit.svelte";
 
     async function updatePackage() {
@@ -21,6 +22,6 @@
 </script>
 
 <PackageEdit pack={packageStruct} tags={packageTags} />
-<!--Button variant="outlined" on:click={updatePackage}>
-    <Label>Update</Label>
-</Button-->
+<Button variant="outlined" on:click={updatePackage}>
+    <Label>Update Package</Label>
+</Button>

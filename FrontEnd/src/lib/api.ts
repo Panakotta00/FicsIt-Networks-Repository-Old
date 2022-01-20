@@ -12,13 +12,19 @@ export class Package extends Package_Base {
 }
 
 export class Tag_Base {
-    id = -1
-    name = ""
-    description = ""
+    id : bigint
+    name : string
+    description : string
+
+    constructor(v : {id?:bigint, name?:string, description?:string}) {
+        this.id = (v && v.id) || -1 as unknown as bigint;
+        this.name = (v && v.name) || "New Tag";
+        this.description = (v && v.description) || "New Tag Description...";
+    }
 }
 
 export class Tag extends Tag_Base {
-    verified = false
+    verified = false;
 }
 
 export class User_Base {

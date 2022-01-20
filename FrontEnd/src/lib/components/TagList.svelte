@@ -83,7 +83,6 @@
         } else {
             const newText = newTagText + e.key
             const [available] = filterAvailableTags(allowedTags, tags, newText)
-            console.log("nice", newText)
             if (available && available.length > 0) {
                 newTag.textContent = available[0].name
                 setTextRange(newTag, newTagText.length + 1, newTag.textContent.length)
@@ -116,7 +115,7 @@
     </Set>
     {#if editable}
         <div id="newTagContainer" bind:this={newTagContainer} on:focusin={() => surface.setOpen(true)} on:focusout={() => setTimeout(() => {if (!newTagContainer.contains(document.activeElement)) surface.setOpen(false)}, 200)}>
-            <MenuSurface bind:this={surface} managed="true" anchorCorner="BOTTOM_LEFT" anchorElement={newTag} on:focusin={() => console.log("test")}>
+            <MenuSurface bind:this={surface} managed="true" anchorCorner="BOTTOM_LEFT" anchorElement={newTag}>
                 <div style="margin: 1rem">
                     <h1>Available Tags</h1>
                     <div class="flex flex-wrap m-1">
