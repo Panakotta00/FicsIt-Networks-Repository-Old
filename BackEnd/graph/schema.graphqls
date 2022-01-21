@@ -1,0 +1,55 @@
+type Package {
+  id: ID!
+  displayName: String!
+  name: String!
+  description: String!
+  sourceLink: String
+  creator: User!
+  verified: Boolean!
+  tags: [Tag!]!
+  releases: [Release!]!
+}
+
+type User {
+  id: ID!
+  name: String!
+  bio: String!
+  googleToken: String
+  admin: Boolean!
+  email: String!
+  verified: Boolean!
+  packages: [Package!]
+}
+
+type Tag {
+    id: ID!
+    name: String!
+    description: String!
+    verified: Boolean!
+    packages: [Package!]!
+}
+
+type Release {
+    id: ID!
+    package: Package!
+    name: String!
+    description: String!
+    sourceLink: String!
+    version: String!
+    finVersion: String!
+    verified: Boolean!
+    hash: String!
+}
+
+type Query {
+  packages: [Package!]!
+}
+
+#input NewTodo {
+#  text: String!
+#  userId: String
+#}
+
+#type Mutation {
+#  createTodo(input: NewTodo!): Todo!
+#}

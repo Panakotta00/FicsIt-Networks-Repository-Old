@@ -1,2 +1,9 @@
 # JetBrains IDE
 .idea
+
+# Generate Go Files
+dataloader
+!dataloader/dataloader.go
+Convert/generated
+graph/generated
+graph/model/models_gen.go

@@ -1,8 +1,8 @@
 package Database
 
 import (
+	"FINRepository/Util"
 	"gorm.io/gorm"
-	"main/Util"
 )
 
 type User struct {

@@ -1,29 +1,25 @@
 package Database
 
 import (
+	"FINRepository/Util"
 	"gorm.io/gorm"
 	"log"
-	"main/Util"
 )
 
-type PackageLimited struct {
-	ID          uint64  `json:"id" gorm:"column:package_id;not null;primaryKey"`
-	Name        string  `json:"name" gorm:"column:package_name;not null;unique"`
-	DisplayName string  `json:"displayName" gorm:"column:package_displayname;not null"`
-	Description string  `json:"description" gorm:"column:package_description;not null"`
-	SourceLink  *string `json:"sourceLink" gorm:"column:package_sourcelink;"`
+type Package struct {
+	ID          uint64  `json:"id" gorm:"column:package_id;not null;primaryKey" fin:"id"`
+	Name        string  `json:"name" gorm:"column:package_name;not null;unique" fin:"name"`
+	DisplayName string  `json:"displayName" gorm:"column:package_displayname;not null" fin:"displayName"`
+	Description string  `json:"description" gorm:"column:package_description;not null" fin:"name"`
+	SourceLink  *string `json:"sourceLink" gorm:"column:package_sourcelink;" fin:"description"`
 	CreatorID   uint64  `json:"creatorId" gorm:"column:package_creator_id;not null"`
 	CreatorS    *User   `json:"creator,omitempty" gorm:"foreignKey:CreatorID"`
 	Tags        []*Tag  `json:"tags,omitempty" gorm:"many2many:Package_Tag;foreignKey:package_id;joinForeignKey:package_id;References:tag_id;joinReferences:tag_id"`
+	Verified    bool    `json:"verified" gorm:"column:package_verified;not null;default:false"`
 }
 
-func (PackageLimited) TableName() string {
+func (Package) TableName() string {
 	return "Repository.Package"
-}
-
-type Package struct {
-	PackageLimited
-	Verified bool `json:"verified" gorm:"column:package_verified;not null;default:false"`
 }
 
 type PackageChange struct {

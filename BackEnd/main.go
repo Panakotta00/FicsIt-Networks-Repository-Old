@@ -1,15 +1,20 @@
 package main
 
 import (
+	"FINRepository/Database"
+	"FINRepository/Util"
+	"FINRepository/dataloader"
+	"FINRepository/graph"
+	"FINRepository/graph/generated"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"log"
-	"main/Database"
-	"main/Util"
 	"net/http"
 	"os"
 	"strconv"
@@ -186,6 +191,16 @@ func main() {
 		AllowOrigins: []string{"*"},
 	}))
 
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			newCtx := Util.ContextWithDB(ctx.Request().Context(), db)
+			ctx.SetRequest(ctx.Request().WithContext(newCtx))
+			return next(ctx)
+		}
+	})
+
+	e.Use(dataloader.Middleware)
+
 	e.GET("/package", listPackages)
 	e.GET("/package/:id", getPackage)
 	e.GET("/package/:id/tags", getPackageTags)
@@ -195,6 +210,11 @@ func main() {
 	e.GET("/tag/:id", getTag)
 	e.GET("/user", listUsers)
 	e.GET("/user/:id", getUser)
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+
+	e.Any("/playground", echo.WrapHandler(playground.Handler("GraphQL playground", "/query")))
+	e.Any("/query", echo.WrapHandler(srv))
 
 	e.Logger.Fatal(e.Start(":8000"))
 }
