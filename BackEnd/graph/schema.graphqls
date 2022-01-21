@@ -14,7 +14,6 @@ type User {
   id: ID!
   name: String!
   bio: String!
-  googleToken: String
   admin: Boolean!
   email: String!
   verified: Boolean!
@@ -41,15 +40,72 @@ type Release {
     hash: String!
 }
 
-type Query {
-  packages: [Package!]!
+### Inputs
+
+input NewPackage {
+    name: String!
+    displayName: String!
+    description: String!
+    sourceLink: String
+    creatorId: ID
 }
 
-#input NewTodo {
-#  text: String!
-#  userId: String
-#}
+input UpdatePackage {
+    id: ID!
+    name: String
+    displayName: String
+    description: String
+    sourceLink: String
+}
 
-#type Mutation {
-#  createTodo(input: NewTodo!): Todo!
-#}
+input NewRelease {
+    packageId: ID!
+    name: String!
+    description: String!
+    sourceLink: String!
+    version: String!
+    finVersion: String!
+}
+
+input UpdateRelease {
+    id: ID!
+    name: String
+    description: String
+}
+
+input NewTag {
+    name: String!
+    description: String!
+}
+
+input UpdateTag {
+    id: ID!
+    name: String
+    description: String
+}
+
+### Queries
+
+type Query {
+    listPackages(page: Int! = 0, count: Int! = 50): [Package!]!
+    getPackagesById(ids: [ID!]!): [Package]!
+    getUsersById(ids: [ID!]!): [User]!
+    getAllTags: [Tag!]!
+}
+
+### Mutations
+
+type Mutation {
+    createPackage(package: NewPackage!): Package!
+    updatePackage(package: UpdatePackage!): Boolean!
+    deletePackage(packageId: ID!): Boolean!
+    newRelease(release: NewRelease!): Release!
+    updateRelease(release: UpdateRelease!): Boolean!
+    deleteRelease(releaseId: ID!): Boolean!
+#    createUser(user: NewUser!): User!
+#    updateUser(user: UpdateUser!): Boolean!
+    deleteUser(userId: ID!): Boolean!
+    createTag(tag: NewTag!): Tag!
+    updateTag(tag: UpdateTag!): Boolean!
+    deleteTag(tagId: ID!): Boolean!
+}

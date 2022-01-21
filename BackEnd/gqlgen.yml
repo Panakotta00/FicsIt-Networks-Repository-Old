@@ -45,3 +45,20 @@ models:
     fields:
       creator:
         resolver: true
+      tags:
+        resolver: true
+      releases:
+        resolver: true
+  User:
+    fields:
+      packages:
+        resolver: true
+  Tag:
+    fields:
+      packages:
+        resolver: true
+  Release:
+    fields:
+      package:
+        resolver: true
+
