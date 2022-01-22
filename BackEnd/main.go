@@ -3,12 +3,16 @@ package main
 import (
 	"FINRepository/Database"
 	"FINRepository/Util"
+	"FINRepository/auth"
 	"FINRepository/dataloader"
 	"FINRepository/graph"
 	"FINRepository/graph/generated"
+	"context"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/bwmarrin/snowflake"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/postgres"
@@ -185,6 +189,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	node, err := strconv.ParseInt(os.Getenv("FINREPO_NODE"), 10, 64)
+	if err != nil || node < 0 {
+		log.Fatal("Invalid Node: %v", err)
+	}
+	idGen, err := snowflake.NewNode(node)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -194,6 +207,48 @@ func main() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			newCtx := Util.ContextWithDB(ctx.Request().Context(), db)
+			ctx.SetRequest(ctx.Request().WithContext(newCtx))
+			return next(ctx)
+		}
+	})
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			newCtx := context.WithValue(ctx.Request().Context(), "snowflake", idGen)
+			ctx.SetRequest(ctx.Request().WithContext(newCtx))
+			return next(ctx)
+		}
+	})
+
+	gqlConfig := generated.Config{Resolvers: &graph.Resolver{}}
+	gqlConfig.Directives.IsAdmin = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
+		auth := ctx.Value("auth").(*http.Cookie)
+
+		if auth.Value != "admin" {
+			return nil, fmt.Errorf("Access denied")
+		}
+
+		return next(ctx)
+	}
+	gqlConfig.Directives.CanViewPackageVerified = func(ctx context.Context, obj interface{}, next graphql.Resolver, field string) (interface{}, error) {
+		auth := ctx.Value("auth").(*http.Cookie)
+
+		if auth.Value != "admin" {
+			return nil, fmt.Errorf("Access denied")
+		}
+
+		return next(ctx)
+	}
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			c, err := ctx.Cookie("token")
+
+			if err != nil || c == nil {
+				return next(ctx)
+			}
+
+			newCtx := context.WithValue(ctx.Request().Context(), "auth", c)
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			return next(ctx)
 		}
@@ -210,8 +265,9 @@ func main() {
 	e.GET("/tag/:id", getTag)
 	e.GET("/user", listUsers)
 	e.GET("/user/:id", getUser)
+	e.POST("/oauth", auth.OAuth2Request)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(gqlConfig))
 
 	e.Any("/playground", echo.WrapHandler(playground.Handler("GraphQL playground", "/query")))
 	e.Any("/query", echo.WrapHandler(srv))

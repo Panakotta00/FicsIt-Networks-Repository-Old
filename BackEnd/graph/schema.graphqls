@@ -1,3 +1,6 @@
+directive @canViewPackageVerified(field: String!) on FIELD_DEFINITION
+directive @isAdmin on FIELD_DEFINITION
+
 type Package {
   id: ID!
   displayName: String!
@@ -5,7 +8,7 @@ type Package {
   description: String!
   sourceLink: String
   creator: User!
-  verified: Boolean!
+  verified: Boolean! @canViewPackageVerified(field: "id")
   tags: [Tag!]!
   releases: [Release!]!
 }
@@ -16,7 +19,7 @@ type User {
   bio: String!
   admin: Boolean!
   email: String!
-  verified: Boolean!
+  verified: Boolean! @isAdmin
   packages: [Package!]
 }
 
@@ -24,7 +27,7 @@ type Tag {
     id: ID!
     name: String!
     description: String!
-    verified: Boolean!
+    verified: Boolean! @isAdmin
     packages: [Package!]!
 }
 
@@ -36,7 +39,7 @@ type Release {
     sourceLink: String!
     version: String!
     finVersion: String!
-    verified: Boolean!
+    verified: Boolean! @isAdmin
     hash: String!
 }
 
@@ -104,8 +107,8 @@ type Mutation {
     deleteRelease(releaseId: ID!): Boolean!
 #    createUser(user: NewUser!): User!
 #    updateUser(user: UpdateUser!): Boolean!
-    deleteUser(userId: ID!): Boolean!
-    createTag(tag: NewTag!): Tag!
-    updateTag(tag: UpdateTag!): Boolean!
-    deleteTag(tagId: ID!): Boolean!
+#    deleteUser(userId: ID!): Boolean!
+    createTag(tag: NewTag!): Tag! @isAdmin
+    updateTag(tag: UpdateTag!): Boolean! @isAdmin
+    deleteTag(tagId: ID!): Boolean! @isAdmin
 }

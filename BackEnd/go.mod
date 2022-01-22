@@ -4,9 +4,13 @@ go 1.16
 
 require (
 	github.com/99designs/gqlgen v0.15.1
+	github.com/bwmarrin/snowflake v0.3.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/jackc/pgx/v4 v4.14.1 // indirect
 	github.com/jmattheis/goverter v0.3.0
 	github.com/labstack/echo/v4 v4.6.3
+	github.com/lestrrat-go/jwx v1.2.17
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/vektah/dataloaden v0.3.0
 	github.com/vektah/gqlparser/v2 v2.2.0

@@ -32,7 +32,7 @@ func GetPagination(c echo.Context) (int, int) {
 	return page, count
 }
 
-func GetSnowflake(c echo.Context, param string) (uint64, error) {
-	id, err := strconv.ParseUint(c.Param(param), 10, 64)
+func GetSnowflake(c echo.Context, param string) (int64, error) {
+	id, err := strconv.ParseInt(c.Param(param), 10, 64)
 	return id, err
 }

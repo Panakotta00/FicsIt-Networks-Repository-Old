@@ -4,6 +4,7 @@ package Convert
 
 import (
 	"FINRepository/Database"
+	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
 )
 
@@ -20,6 +21,7 @@ type Converter interface {
 	ConvertUser(Database.User) model.User
 
 	ConvertTag(Database.Tag) model.Tag
+	ConvertTagP(*Database.Tag) *model.Tag
 	ConvertTagA([]Database.Tag) []model.Tag
 	ConvertTagPA([]*Database.Tag) []*model.Tag
 
@@ -29,10 +31,10 @@ type Converter interface {
 	ConvertReleaseP([]Database.Release) []model.Release
 }
 
-func UserIdToUser(id uint64) model.User {
-	return model.User{ID: id}
+func UserIdToUser(id Database.ID) model.User {
+	return model.User{ID: graphtypes.ID(id)}
 }
 
-func PackageIdToPackage(id uint64) model.Package {
-	return model.Package{ID: id}
+func PackageIdToPackage(id Database.ID) model.Package {
+	return model.Package{ID: graphtypes.ID(id)}
 }

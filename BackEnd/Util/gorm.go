@@ -3,6 +3,7 @@ package Util
 import (
 	"context"
 	"gorm.io/gorm"
+	"reflect"
 )
 
 type ContextDB struct{}
@@ -20,4 +21,14 @@ func ContextWithDB(ctx context.Context, db *gorm.DB) context.Context {
 
 func DBFromContext(ctx context.Context) *gorm.DB {
 	return ctx.Value(ContextDB{}).(*gorm.DB)
+}
+
+func FilterUpdateFields(fields map[string]interface{}) (newFields map[string]interface{}) {
+	newFields = make(map[string]interface{}, len(fields))
+	for k, v := range fields {
+		if !reflect.ValueOf(v).IsNil() {
+			newFields[k] = v
+		}
+	}
+	return
 }

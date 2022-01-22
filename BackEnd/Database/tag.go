@@ -1,11 +1,13 @@
 package Database
 
 import (
+	"FINRepository/Util"
+	"context"
 	"gorm.io/gorm"
 )
 
 type Tag struct {
-	ID          uint64     `json:"id" gorm:"column:tag_id;not null;primaryKey"`
+	ID          ID         `json:"id" gorm:"column:tag_id;not null;primaryKey"`
 	Name        string     `json:"name" gorm:"column:tag_name;not null"`
 	Description string     `json:"description" gorm:"column:tag_description;not null"`
 	Verified    bool       `json:"verified" gorm:"column:tag_verified;not null;default:false"`
@@ -24,10 +26,28 @@ func GetTags(db *gorm.DB) (*[]*Tag, error) {
 	return tags, nil
 }
 
-func TagGet(db *gorm.DB, tagID uint64) (*Tag, error) {
+func TagGet(db *gorm.DB, tagID int64) (*Tag, error) {
 	tag := new(Tag)
 	if err := db.First(tag, tagID).Error; err != nil {
 		return nil, err
 	}
 	return tag, nil
+}
+
+func CreateTag(ctx context.Context, tagName string, tagDescription string) (*Tag, error) {
+	tag := Tag{ID: ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()), Name: tagName, Description: tagDescription}
+	err := Util.DBFromContext(ctx).Create(&tag).Error
+	return &tag, err
+}
+
+func UpdateTag(ctx context.Context, tagId ID, tagName *string, tagDescription *string) bool {
+	fields := Util.FilterUpdateFields(map[string]interface{}{"tag_name": tagName, "tag_description": tagDescription})
+	result := Util.DBFromContext(ctx).Model(&Tag{}).Where("tag_id = ?", tagId).Updates(fields)
+	return result.Error == nil && result.RowsAffected == 1
+}
+
+func DeleteTag(ctx context.Context, tagId ID) bool {
+	Util.DBFromContext(ctx).Where("tag_id = ?", tagId).Delete(&PackageTag{})
+	result := Util.DBFromContext(ctx).Where("tag_id = ?", tagId).Delete(&Tag{})
+	return result.Error == nil && result.RowsAffected == 1
 }

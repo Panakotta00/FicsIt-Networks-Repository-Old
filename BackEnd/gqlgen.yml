@@ -33,13 +33,15 @@ autobind:
 
 models:
   ID:
-    model:
-      - github.com/99designs/gqlgen/graphql.Uint64
+    model: FINRepository/graph/graphtypes.MyID
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
 
   Package:
     fields:

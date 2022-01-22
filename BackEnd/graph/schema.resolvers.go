@@ -9,6 +9,7 @@ import (
 	"FINRepository/Util"
 	"FINRepository/dataloader"
 	"FINRepository/graph/generated"
+	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
 	"context"
 	"errors"
@@ -26,7 +27,7 @@ func (r *mutationResolver) UpdatePackage(ctx context.Context, packageArg model.U
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DeletePackage(ctx context.Context, packageID uint64) (bool, error) {
+func (r *mutationResolver) DeletePackage(ctx context.Context, packageID graphtypes.ID) (bool, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -38,24 +39,26 @@ func (r *mutationResolver) UpdateRelease(ctx context.Context, release model.Upda
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DeleteRelease(ctx context.Context, releaseID uint64) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) DeleteUser(ctx context.Context, userID uint64) (bool, error) {
+func (r *mutationResolver) DeleteRelease(ctx context.Context, releaseID graphtypes.ID) (bool, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateTag(ctx context.Context, tag model.NewTag) (*model.Tag, error) {
-	panic(fmt.Errorf("not implemented"))
+	dbTag, err := Database.CreateTag(ctx, tag.Name, tag.Description)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return nil, errors.New("unable to create tag")
+	}
+	var conv = &generated1.ConverterImpl{}
+	return conv.ConvertTagP(dbTag), nil
 }
 
 func (r *mutationResolver) UpdateTag(ctx context.Context, tag model.UpdateTag) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	return Database.UpdateTag(ctx, Database.ID(tag.ID), tag.Name, tag.Description), nil
 }
 
-func (r *mutationResolver) DeleteTag(ctx context.Context, tagID uint64) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) DeleteTag(ctx context.Context, tagID graphtypes.ID) (bool, error) {
+	return Database.DeleteTag(ctx, Database.ID(tagID)), nil
 }
 
 func (r *packageResolver) Creator(ctx context.Context, obj *model.Package) (*model.User, error) {
@@ -112,7 +115,7 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 	return packs, nil
 }
 
-func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []uint64) ([]*model.Package, error) {
+func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID) ([]*model.Package, error) {
 	var fieldMap = map[string]string{
 		"id":          "package_id",
 		"name":        "package_name",
@@ -139,11 +142,11 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []uint64) ([]*m
 		return nil, errors.New("unable to get packages")
 	}
 
-	var idMap = make(map[uint64]*model.Package, len(packages))
+	var idMap = make(map[graphtypes.ID]*model.Package, len(packages))
 	var conv = generated1.ConverterImpl{}
 	for _, pack := range packages {
 		p := conv.ConvertPackage(*pack)
-		idMap[pack.ID] = &p
+		idMap[graphtypes.ID(pack.ID)] = &p
 	}
 	var packs = make([]*model.Package, len(ids))
 	for i, id := range ids {
@@ -153,7 +156,7 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []uint64) ([]*m
 	return packs, nil
 }
 
-func (r *queryResolver) GetUsersByID(ctx context.Context, ids []uint64) ([]*model.User, error) {
+func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) ([]*model.User, error) {
 	var fieldMap = map[string]string{
 		"id":       "user_id",
 		"name":     "user_name",
@@ -178,11 +181,11 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []uint64) ([]*mode
 		return nil, errors.New("unable to get idMap")
 	}
 
-	var idMap = make(map[uint64]*model.User, len(dbUsers))
+	var idMap = make(map[graphtypes.ID]*model.User, len(dbUsers))
 	var conv = generated1.ConverterImpl{}
 	for _, user := range dbUsers {
 		u := conv.ConvertUser(*user)
-		idMap[user.ID] = &u
+		idMap[graphtypes.ID(user.ID)] = &u
 	}
 	var packs = make([]*model.User, len(ids))
 	for i, id := range ids {
@@ -198,7 +201,8 @@ func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
 		return nil, errors.New("unable to get all tags")
 	}
 	conv := generated1.ConverterImpl{}
-	return conv.ConvertTagPA(*dbTags), nil
+	tags := conv.ConvertTagPA(*dbTags)
+	return tags, nil
 }
 
 func (r *releaseResolver) Package(ctx context.Context, obj *model.Release) (*model.Package, error) {

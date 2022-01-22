@@ -5,8 +5,8 @@ import (
 )
 
 type Release struct {
-	ID          uint64   `json:"id" gorm:"column:release_id;not null;primaryKey"`
-	PackageID   uint64   `json:"packageId" gorm:"column:package_id;not null"`
+	ID          ID   	 `json:"id" gorm:"column:release_id;not null;primaryKey"`
+	PackageID   ID   	 `json:"packageId" gorm:"column:package_id;not null"`
 	Name        string   `json:"name" gorm:"column:release_name;not null"`
 	Description string   `json:"description" gorm:"column:release_description;not null"`
 	SourceLink  string   `json:"sourceLink" gorm:"column:release_source_link;not null"`
@@ -18,13 +18,13 @@ type Release struct {
 }
 
 type ReleaseChange struct {
-	ID          uint64  `json:"id" gorm:"column:release_change_id;not null;primaryKey"`
-	Name        *string `json:"name" gorm:"column:release_name"`
-	Description *string `json:"description" gorm:"column:release_description"`
+	ID          ID  	 `json:"id" gorm:"column:release_change_id;not null;primaryKey"`
+	Name        *string  `json:"name" gorm:"column:release_name"`
+	Description *string  `json:"description" gorm:"column:release_description"`
 	Release     *Release `json:"release,omitempty" gorm:"foreignKey:release_change_id"`
 }
 
-func ReleaseGet(db *gorm.DB, releaseId uint64) (*Release, error) {
+func ReleaseGet(db *gorm.DB, releaseId int64) (*Release, error) {
 	release := new(Release)
 	if err := db.First(&release, releaseId).Error; err != nil {
 		return nil, err

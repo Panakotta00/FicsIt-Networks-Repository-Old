@@ -7,12 +7,12 @@ import (
 )
 
 type Package struct {
-	ID          uint64  `json:"id" gorm:"column:package_id;not null;primaryKey" fin:"id"`
+	ID          ID      `json:"id" gorm:"column:package_id;not null;primaryKey" fin:"id"`
 	Name        string  `json:"name" gorm:"column:package_name;not null;unique" fin:"name"`
 	DisplayName string  `json:"displayName" gorm:"column:package_displayname;not null" fin:"displayName"`
 	Description string  `json:"description" gorm:"column:package_description;not null" fin:"name"`
 	SourceLink  *string `json:"sourceLink" gorm:"column:package_sourcelink;" fin:"description"`
-	CreatorID   uint64  `json:"creatorId" gorm:"column:package_creator_id;not null"`
+	CreatorID   ID      `json:"creatorId" gorm:"column:package_creator_id;not null"`
 	CreatorS    *User   `json:"creator,omitempty" gorm:"foreignKey:CreatorID"`
 	Tags        []*Tag  `json:"tags,omitempty" gorm:"many2many:Package_Tag;foreignKey:package_id;joinForeignKey:package_id;References:tag_id;joinReferences:tag_id"`
 	Verified    bool    `json:"verified" gorm:"column:package_verified;not null;default:false"`
@@ -23,7 +23,7 @@ func (Package) TableName() string {
 }
 
 type PackageChange struct {
-	ID          uint64   `json:"id" gorm:"column:package_change_id;not null;primaryKey"`
+	ID          ID       `json:"id" gorm:"column:package_change_id;not null;primaryKey"`
 	Name        *string  `json:"name" gorm:"column:package_name"`
 	DisplayName *string  `json:"displayName" gorm:"column:package_displayname"`
 	Description *string  `json:"description" gorm:"column:package_description"`
@@ -36,8 +36,8 @@ func (PackageChange) TableName() string {
 }
 
 type PackageTag struct {
-	PackageID uint64 `json:"packageId" gorm:"column:package_id;primaryKey"`
-	TagID     uint64 `json:"tagId" gorm:"column:tag_id;primaryKey"`
+	PackageID int64 `json:"packageId" gorm:"column:package_id;primaryKey"`
+	TagID     int64 `json:"tagId" gorm:"column:tag_id;primaryKey"`
 }
 
 func (PackageTag) TableName() string {
@@ -52,7 +52,7 @@ func ListPackages(db *gorm.DB, page int, count int) (*[]*Package, error) {
 	return packages, nil
 }
 
-func GetPackageByID(db *gorm.DB, packageId uint64) (*Package, error) {
+func GetPackageByID(db *gorm.DB, packageId int64) (*Package, error) {
 	pack := new(Package)
 	if err := db.First(&pack, packageId).Error; err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func GetPackageByName(db *gorm.DB, packageName string) (*Package, error) {
 	return pack, nil
 }
 
-func GetPackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
+func GetPackageTags(db *gorm.DB, packageId int64) (*[]*Tag, error) {
 	var pack Package
 	if err := db.Preload("Tags").Select("ID").First(&pack, packageId).Error; err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func GetPackageTags(db *gorm.DB, packageId uint64) (*[]*Tag, error) {
 	return &pack.Tags, nil
 }
 
-func ListPackageReleases(db *gorm.DB, packageId uint64, page int, count int) (*[]*Release, error) {
+func ListPackageReleases(db *gorm.DB, packageId int64, page int, count int) (*[]*Release, error) {
 	var releases *[]*Release
 	if err := db.Scopes(Util.Paginate(page, count)).Where("package_id = ?", packageId).Find(&releases).Error; err != nil {
 		return nil, err
