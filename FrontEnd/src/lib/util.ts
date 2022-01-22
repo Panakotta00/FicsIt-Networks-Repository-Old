@@ -28,3 +28,19 @@ export function placeCaretAtEnd(el : HTMLElement) : void {
         textRange.select();
     }*/
 }
+
+export function getCookie(cookieName : string) : string {
+    const cookie = {};
+    document.cookie.split(';').forEach(function(el) {
+        const [key,value] = el.split('=');
+        cookie[key.trim()] = value;
+    })
+    return cookie[cookieName];
+}
+
+export function setCookie(cname : string, cvalue : string, exdays : number) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    const expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}

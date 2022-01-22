@@ -4,6 +4,7 @@
     import Chip, { Set, TrailingAction, Text } from '@smui/chips';
     import {placeCaretAtEnd, setTextRange} from "$lib/util";
     import MenuSurface, { MenuSurfaceComponentDev } from '@smui/menu-surface';
+    import Tooltip, {Wrapper} from '@smui/tooltip';
 
     export let tags : Tag_Base[] = null
     export let editable : boolean|null = undefined
@@ -106,12 +107,15 @@
 
 <div class="tags" on:click={getFocus}>
     <Set class="tagList" chips={tags} let:chip key={tag => tag.name} nonInteractive>
-        <Chip {chip} shouldRemoveOnTrailingIconClick=true on:SMUIChip:removal={() => {tags = tags; setTimeout(() => getFocus(), 100)}}>
-            <Text>{chip.name}</Text>
-            {#if editable}
-                <TrailingAction icon$class="material-icons">cancel</TrailingAction>
-            {/if}
-        </Chip>
+        <!--Wrapper-->
+            <Chip {chip} shouldRemoveOnTrailingIconClick=true on:SMUIChip:removal={() => {tags = tags; setTimeout(() => getFocus(), 100)}}>
+                <Text>{chip.name}</Text>
+                {#if editable}
+                    <TrailingAction icon$class="material-icons">cancel</TrailingAction>
+                {/if}
+            </Chip>
+            <!--Tooltip xPos="start">{chip.description}</Tooltip>
+        </Wrapper-->
     </Set>
     {#if editable}
         <div id="newTagContainer" bind:this={newTagContainer} on:focusin={() => surface.setOpen(true)} on:focusout={() => setTimeout(() => {if (!newTagContainer.contains(document.activeElement)) surface.setOpen(false)}, 200)}>
@@ -120,16 +124,22 @@
                     <h1>Available Tags</h1>
                     <div class="flex flex-wrap m-1">
                         <Set chips={filteredAvailableTags} let:chip key={tag => tag.name}>
-                            <Chip {chip} on:SMUIChip:interaction={() => addTag(chip.name)}>
-                                <Text>{chip.name}</Text>
-                            </Chip>
+                            <!--Wrapper-->
+                                <Chip {chip} on:SMUIChip:interaction={() => addTag(chip.name)}>
+                                    <Text>{chip.name}</Text>
+                                </Chip>
+                                <!--Tooltip xPos="start">{chip.description}</Tooltip>
+                            </Wrapper-->
                         </Set>
                     </div>
                     <div class="flex flex-wrap m-1">
                         <Set chips={filteredUnavailableTags} let:chip key={tag => tag.name}>
-                            <Chip {chip} on:SMUIChip:interaction={() => addTag(chip.name)}>
-                                <Text>{chip.name}</Text>
-                            </Chip>
+                            <!--Wrapper-->
+                                <Chip {chip} on:SMUIChip:interaction={() => addTag(chip.name)}>
+                                    <Text>{chip.name}</Text>
+                                </Chip>
+                                <!--Tooltip xPos="start">{chip.description}</Tooltip>
+                            </Wrapper-->
                         </Set>
                     </div>
                 </div>
