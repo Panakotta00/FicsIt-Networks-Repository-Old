@@ -6,7 +6,6 @@
     import HelperText from "@smui/textfield/helper-text";
     import Button, {Label, Icon} from "@smui/button";
     import Snackbar, {SnackbarComponentDev} from "@smui/snackbar";
-    import {setTextRange} from "$lib/util";
     import IconButton, { Icon as ButtonIcon } from '@smui/icon-button';
 
     let tags : Tag_Base[] = []
