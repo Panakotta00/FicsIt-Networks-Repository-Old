@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"FINRepository/Database"
+	"FINRepository/Util"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt"
@@ -10,22 +13,87 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const jwkGoogleURL = "https://www.googleapis.com/oauth2/v3/certs"
 const clientIDGoogle = "808175066760-mgsgdt1o4f8n2c84uh5pge7dik9iovvk.apps.googleusercontent.com"
 
-type JWK struct {
-	KID string `json:"kid"`
-	Use string `json:"use"`
-	KTY string `json:"kty"`
-	N   string `json:"n"`
-	Alg string `json:"alg"`
-	E   string `json:"e"`
+var JWTSecret = []byte("aklsdfjklasdjflkasdjfklajsdlkfjaweriojcnjqwoiuarvjnokijaernjvkjlasdnhjf")
+
+type TokenClaims struct {
+	jwt.StandardClaims
+	Username string      `json:"username"`
+	EMail    string      `json:"email"`
+	ID       Database.ID `json:"id"`
 }
 
-type JWKList struct {
-	Keys []JWK `json:"keys"`
+func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	finish := func(ctx echo.Context, user *Database.User) error {
+		newCtx := context.WithValue(ctx.Request().Context(), "auth", user)
+		ctx.SetRequest(ctx.Request().WithContext(newCtx))
+		return next(ctx)
+	}
+
+	return func(ctx echo.Context) error {
+
+		tokenCookie, err := ctx.Cookie("token")
+
+		if err != nil || tokenCookie == nil {
+			return finish(ctx, nil)
+		}
+
+		var tokenClaims = TokenClaims{}
+		_, err = jwt.ParseWithClaims(tokenCookie.Value, &tokenClaims, func(token *jwt.Token) (interface{}, error) {
+			return JWTSecret, nil
+		})
+		if err != nil {
+			ctx.SetCookie(&http.Cookie{Name: "token", MaxAge: -1})
+			return echo.NewHTTPError(http.StatusForbidden, "failed to verify token")
+		}
+
+		var user Database.User
+		if err := Util.DBFromContext(ctx.Request().Context()).Find(&user, tokenClaims.ID).Error; err != nil {
+			ctx.SetCookie(&http.Cookie{Name: "token", RawExpires: "-1"})
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get authenticated user")
+		}
+
+		return finish(ctx, &user)
+	}
+}
+
+func AuthenticateUser(c echo.Context, email string, username string) (string, error) {
+	ctx := c.Request().Context()
+	var user Database.User
+	query := Util.DBFromContext(ctx).Where("user_email = ?", email).Find(&user)
+	if err := query.Error; err != nil || query.RowsAffected < 1 {
+		// no existing account found, try to create one
+		user = Database.User{ID: Database.ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()), Name: username, EMail: email}
+		if err = Util.DBFromContext(ctx).Create(&user).Error; err != nil {
+			log.Printf("Error Auth User: %e", err)
+			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
+		}
+	}
+
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &TokenClaims{
+		Username: user.Name,
+		EMail:    user.EMail,
+		ID:       user.ID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(JWTSecret)
+	if err != nil {
+		log.Println("Error Token Gen: %e", err)
+		return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to create authentication token")
+	}
+
+	c.SetCookie(&http.Cookie{Name: "token", Value: tokenString})
+	return tokenString, nil
 }
 
 func OAuth2Request(ctx echo.Context) error {
@@ -44,7 +112,6 @@ func OAuth2Request(ctx echo.Context) error {
 			q := r.Query()
 			q.Add("failure", err)
 			r.RawQuery = q.Encode()
-			log.Println(r.String())
 			return ctx.Redirect(http.StatusTemporaryRedirect, r.String())
 		} else {
 			return echo.NewHTTPError(code, err)
@@ -110,12 +177,22 @@ func OAuth2Request(ctx echo.Context) error {
 		return RespondError(http.StatusBadRequest, "no accepted iss in token")
 	}
 
+	tokenString, err := AuthenticateUser(ctx, claimMap["email"].(string), claimMap["name"].(string))
+	if err != nil {
+		return RespondError(http.StatusBadRequest, err.Error())
+	}
+
 	if redirect != nil {
 		q := redirect.Query()
 		q.Del("failure")
 		redirect.RawQuery = q.Encode()
 		return ctx.Redirect(http.StatusTemporaryRedirect, redirect.String())
 	} else {
-		return ctx.NoContent(http.StatusOK)
+		response := struct {
+			token string
+		}{
+			token: tokenString,
+		}
+		return ctx.JSON(http.StatusOK, response)
 	}
 }

@@ -11,10 +11,11 @@ import (
 // goverter:converter
 // goverter:extend UserIdToUser
 // goverter:extend PackageIdToPackage
-type Converter interface {
+type ConverterDB interface {
 	// goverter:ignore Releases
 	// goverter:map CreatorID Creator
 	ConvertPackage(Database.Package) model.Package
+	ConvertPackageP(*Database.Package) *model.Package
 
 	// goverter:ignore Packages
 	// goverter:map EMail Email
@@ -37,4 +38,21 @@ func UserIdToUser(id Database.ID) model.User {
 
 func PackageIdToPackage(id Database.ID) model.Package {
 	return model.Package{ID: graphtypes.ID(id)}
+}
+
+// goverter:converter
+// goverter:extend UserToUserId
+type ConverterModel interface {
+	// goverter:map Creator CreatorID
+	// goverter:ignore CreatorS
+	// goverter:ignore Tags
+	ConvertPackage(model.Package) Database.Package
+	ConvertPackageP(*model.Package) *Database.Package
+}
+
+func UserToUserId(creator *model.User) Database.ID {
+	if creator == nil {
+		return 0
+	}
+	return Database.ID(creator.ID)
 }

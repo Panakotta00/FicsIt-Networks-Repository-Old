@@ -49,7 +49,7 @@ func (r *mutationResolver) CreateTag(ctx context.Context, tag model.NewTag) (*mo
 		log.Printf("Error: %v", err)
 		return nil, errors.New("unable to create tag")
 	}
-	var conv = &generated1.ConverterImpl{}
+	var conv = &generated1.ConverterDBImpl{}
 	return conv.ConvertTagP(dbTag), nil
 }
 
@@ -85,7 +85,7 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 		"displayName": "package_displayname",
 		"description": "package_description",
 		"sourceLink":  "package_sourcelink",
-		"verified":    "package_verified",
+		"verified":    "package_verified, package_creator_id",
 		"creator":     "package_creator_id",
 		"tags":        "package_id",
 		"releases":    "package_id",
@@ -106,7 +106,7 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 	}
 
 	var packs = make([]*model.Package, len(packages))
-	var conv = generated1.ConverterImpl{}
+	var conv = generated1.ConverterDBImpl{}
 	for i, pack := range packages {
 		p := conv.ConvertPackage(*pack)
 		packs[i] = &p
@@ -122,7 +122,7 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 		"displayName": "package_displayname",
 		"description": "package_description",
 		"sourceLink":  "package_sourcelink",
-		"verified":    "package_verified",
+		"verified":    "package_verified, package_creator_id",
 		"creator":     "package_creator_id",
 		"tags":        "package_id",
 		"releases":    "package_id",
@@ -143,7 +143,7 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 	}
 
 	var idMap = make(map[graphtypes.ID]*model.Package, len(packages))
-	var conv = generated1.ConverterImpl{}
+	var conv = generated1.ConverterDBImpl{}
 	for _, pack := range packages {
 		p := conv.ConvertPackage(*pack)
 		idMap[graphtypes.ID(pack.ID)] = &p
@@ -182,7 +182,7 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 	}
 
 	var idMap = make(map[graphtypes.ID]*model.User, len(dbUsers))
-	var conv = generated1.ConverterImpl{}
+	var conv = generated1.ConverterDBImpl{}
 	for _, user := range dbUsers {
 		u := conv.ConvertUser(*user)
 		idMap[graphtypes.ID(user.ID)] = &u
@@ -200,7 +200,7 @@ func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
 		log.Printf("Error: %v", err)
 		return nil, errors.New("unable to get all tags")
 	}
-	conv := generated1.ConverterImpl{}
+	conv := generated1.ConverterDBImpl{}
 	tags := conv.ConvertTagPA(*dbTags)
 	return tags, nil
 }

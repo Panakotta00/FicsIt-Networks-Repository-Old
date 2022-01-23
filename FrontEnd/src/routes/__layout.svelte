@@ -9,7 +9,7 @@
     let isLoggedIn = false
 
     onMount(() => {
-        isLoggedIn = getCookie("g_state") != null
+        isLoggedIn = getCookie("token") != null
         hasLoginChecked = true
         console.log("login: ", isLoggedIn)
 
