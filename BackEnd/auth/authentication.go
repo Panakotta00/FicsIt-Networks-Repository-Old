@@ -75,7 +75,7 @@ func AuthenticateUser(c echo.Context, email string, username string) (string, er
 		}
 	}
 
-	expirationTime := time.Now().Add(5 * time.Minute)
+	expirationTime := time.Now().Add(30 * time.Minute)
 	claims := &TokenClaims{
 		Username: user.Name,
 		EMail:    user.EMail,

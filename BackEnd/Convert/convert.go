@@ -29,7 +29,8 @@ type ConverterDB interface {
 	// goverter:map PackageID Package
 	// goverter:map FINVersion FinVersion
 	ConvertRelease(Database.Release) model.Release
-	ConvertReleaseP([]Database.Release) []model.Release
+	ConvertReleaseP(*Database.Release) *model.Release
+	ConvertReleaseA([]Database.Release) []model.Release
 }
 
 func UserIdToUser(id Database.ID) model.User {
@@ -48,6 +49,13 @@ type ConverterModel interface {
 	// goverter:ignore Tags
 	ConvertPackage(model.Package) Database.Package
 	ConvertPackageP(*model.Package) *Database.Package
+
+	// goverter:ignore ID
+	// goverter:ignore Package
+	// goverter:ignore Hash
+	// goverter:ignore Verified
+	// goverter:map FinVersion FINVersion
+	ConvertNewRelease(model.NewRelease) Database.Release
 }
 
 func UserToUserId(creator *model.User) Database.ID {

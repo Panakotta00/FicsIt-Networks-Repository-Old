@@ -1,6 +1,8 @@
 package Database
 
 import (
+	"FINRepository/Util"
+	"context"
 	"gorm.io/gorm"
 )
 
@@ -30,4 +32,18 @@ func ReleaseGet(db *gorm.DB, releaseId int64) (*Release, error) {
 		return nil, err
 	}
 	return release, nil
+}
+
+func CreateRelease(ctx context.Context, packageId ID, name string, description string, sourceURL string, version string, finVersion string) (*Release, error) {
+	release := Release{
+		ID: ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()),
+		PackageID: packageId,
+		Name: name,
+		Description: description,
+		SourceLink: sourceURL,
+		Version: version,
+		FINVersion: finVersion,
+	}
+	err := Util.DBFromContext(ctx).Create(&release).Error
+	return &release, err
 }

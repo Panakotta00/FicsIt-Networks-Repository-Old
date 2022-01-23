@@ -32,7 +32,12 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, packageID graphtyp
 }
 
 func (r *mutationResolver) NewRelease(ctx context.Context, release model.NewRelease) (*model.Release, error) {
-	panic(fmt.Errorf("not implemented"))
+	rel, err := Database.CreateRelease(ctx, Database.ID(release.PackageID), release.Name, release.Description, release.SourceLink, release.Version, release.FinVersion)
+	if err != nil {
+		return nil, errors.New("Unable to create new release")
+	}
+	conv := generated1.ConverterDBImpl{}
+	return conv.ConvertReleaseP(rel), nil
 }
 
 func (r *mutationResolver) UpdateRelease(ctx context.Context, release model.UpdateRelease) (bool, error) {

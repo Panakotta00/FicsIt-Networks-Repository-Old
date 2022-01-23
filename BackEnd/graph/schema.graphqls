@@ -1,5 +1,5 @@
 directive @isAdmin on FIELD_DEFINITION|INPUT_FIELD_DEFINITION|MUTATION
-directive @ownsOrIsAdmin(owningField: String!) on FIELD_DEFINITION
+directive @ownsOrIsAdmin(owningField: String!) on FIELD_DEFINITION|INPUT_FIELD_DEFINITION
 
 type Package {
   id: ID!
@@ -62,7 +62,7 @@ input UpdatePackage {
 }
 
 input NewRelease {
-    packageId: ID!
+    packageId: ID! @ownsOrIsAdmin(owningField: "[packageId,Package].creator.id")
     name: String!
     description: String!
     sourceLink: String!
