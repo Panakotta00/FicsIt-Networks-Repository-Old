@@ -7,6 +7,8 @@
     import Button, {Label, Icon} from "@smui/button";
     import Snackbar, {SnackbarComponentDev} from "@smui/snackbar";
     import IconButton, { Icon as ButtonIcon } from '@smui/icon-button';
+    import {mutation, operationStore, query} from '@urql/svelte';
+    import {noop} from "svelte/internal";
 
     let tags : Tag_Base[] = []
     let accordion : Accordion
@@ -15,6 +17,50 @@
     let snackbarTagChangeSavedText = ""
     let snackbarTagChangeSaved : SnackbarComponentDev
     let tagNegativeID = -1
+
+
+    const tagsQuery = operationStore(`
+        query {
+            getAllTags {
+                id
+                name
+                description
+            }
+        }
+    `);
+
+    const deleteTagQuery = mutation({
+        query: `
+            mutation ($id: ID!) {
+                deleteTag(tagId: $id)
+            }
+        `
+    })
+
+    const createTagQuery = mutation({
+        query: `
+            mutation ($name: String!, $description: String!) {
+                createTag(tag: {name: $name, description: $description}) {
+                    id
+                }
+            }
+        `
+    })
+
+    const updateTagQuery = mutation({
+        query: `
+            mutation ($id: ID!, $name: String, $description: String) {
+                updateTag(tag: {id: $id, name: $name, description: $description})
+            }
+        `
+    })
+
+    query(tagsQuery);
+
+    $: {
+        const data = $tagsQuery.data;
+        tags = (data && data["getAllTags"] as Tag_Base[]) || []
+    }
 
     function newTag() {
         if (!tags.find(tag => tag.name == "New Tag")) {
@@ -34,14 +80,40 @@
         }
     }
 
-    function tagChange(tag : Tag_Base) {
+    async function tagChange(tag : Tag_Base) {
         // ignore "New Tag"
         if (tag.name == "New Tag") return;
 
+        var success = false
         if (tag.id < 0) {
             // Create new tag & update tag.id with new DB id or re-fetch all tags
+            try {
+                const result = await createTagQuery({name: tag.name, description: tag.description})
+                console.log(result)
+                if (result.data) {
+                    tag.id = result.data.id
+                    success = true
+                }
+            } catch (err) {
+                console.log(err)
+            }
+            if (!success) {
+                snackbarTagChangeSavedText = `Failed to create Tag '${tag.name}'!`
+                snackbarTagChangeSaved.open()
+                setTimeout(() => snackbarTagChangeSaved.close(), 2000)
+                return
+            }
         } else {
             // Update existing tag
+            try {
+                success = (await updateTagQuery({id: tag.id, name: tag.name, description: tag.description})).data as boolean
+            } catch {noop()}
+            if (!success) {
+                snackbarTagChangeSavedText = `Failed to update Tag '${tag.name}'!`
+                snackbarTagChangeSaved.open()
+                setTimeout(() => snackbarTagChangeSaved.close(), 2000)
+                return
+            }
         }
 
         snackbarTagChangeSavedText = `Tag '${tag.name}' saved!`
@@ -49,10 +121,22 @@
         setTimeout(() => snackbarTagChangeSaved.close(), 2000)
     }
 
-    function deleteTag(tag) {
-        if (tag.name == "New Tag") {
+    async function deleteTag(tag : Tag_Base) {
+        if (tag.name != "New Tag") {
             // Remove tag
-
+            var success = false
+            try {
+                const result = await deleteTagQuery({id: tag.id})
+                success = result.data as boolean
+            } catch {
+                success = false
+            }
+            if (!success) {
+                snackbarTagChangeSavedText = `Failed to remove Tag '${tag.name}'!`
+                snackbarTagChangeSaved.open()
+                setTimeout(() => snackbarTagChangeSaved.close(), 2000)
+                return
+            }
         }
 
         // Remove tag animation
@@ -61,7 +145,7 @@
             let startHeight = panel.scrollHeight
             panel.classList.add("smui-accordion__panel--removed")
             panel.style.height = startHeight + 'px';
-            requestAnimationFrame(function() {
+            requestAnimationFrame(function () {
                 panel.style.height = 0 + 'px';
             });
             panel.addEventListener("transitionend", e => {
@@ -75,7 +159,6 @@
             })
         }
 
-        console.log(panels[123])
         let isPanelOpen = false
         for (let key in panels) {
             let panelP = panels[key]
@@ -99,45 +182,51 @@
     }
 
     onMount(async () => {
-        tags = await getTags() as Tag_Base[]
+        //tags = await getTags() as Tag_Base[]
     })
 </script>
 
-<Accordion bind:this={accordion}>
-    {#each tags as tag}
-        <Panel bind:this={panels[tag.id]}>
-            <Header>
-                {tag.name}
-                <IconButton slot="icon" on:click={e => {e.stopPropagation(); deleteTag(tag)}}>
-                    <ButtonIcon class="material-icons">delete_forever</ButtonIcon>
-                </IconButton>
+{#if $tagsQuery.fetching}
+    <h1>Loading tags...</h1>
+{:else if tagsQuery.error}
+    <h1>Failed to load tags: {$tagsQuery.error.message}</h1>
+{:else}
+    <Accordion bind:this={accordion}>
+        {#each tags as tag}
+            <Panel bind:this={panels[tag.id]}>
+                <Header>
+                    {tag.name}
+                    <IconButton slot="icon" on:click={e => {e.stopPropagation(); deleteTag(tag)}}>
+                        <ButtonIcon class="material-icons">delete_forever</ButtonIcon>
+                    </IconButton>
+                </Header>
+                <Content>
+                    <Textfield bind:value={tag.name} label="Tag-Name" bind:this={nameFields[tag.id]} on:change={() => tagChange(tag)}>
+                        <HelperText slot="helper">Human-Readable name of the tag that is shown in UI</HelperText>
+                    </Textfield>
+                    <Textfield
+                            style="width: 100%;"
+                            helperLine$style="width: 100%;"
+                            textarea
+                            bind:value={tag.description}
+                            label="Tag-Description"
+                            on:change={() => tagChange(tag)}
+                    >
+                        <HelperText slot="helper">Markdown formatted description of the tag</HelperText>
+                    </Textfield>
+                </Content>
+            </Panel>
+        {/each}
+        <Panel nonInteractive>
+            <Header ripple={false}>
+                <Button variant="outlined" on:click={newTag}>
+                    <Label>Add new tag</Label>
+                    <Icon class="material-icons">add</Icon>
+                </Button>
             </Header>
-            <Content>
-                <Textfield bind:value={tag.name} label="Tag-Name" bind:this={nameFields[tag.id]} on:change={() => tagChange(tag)}>
-                    <HelperText slot="helper">Human-Readable name of the tag that is shown in UI</HelperText>
-                </Textfield>
-                <Textfield
-                        style="width: 100%;"
-                        helperLine$style="width: 100%;"
-                        textarea
-                        bind:value={tag.description}
-                        label="Tag-Description"
-                        on:change={() => tagChange(tag)}
-                >
-                    <HelperText slot="helper">Markdown formatted description of the tag</HelperText>
-                </Textfield>
-            </Content>
         </Panel>
-    {/each}
-    <Panel nonInteractive>
-        <Header ripple={false}>
-            <Button variant="outlined" on:click={newTag}>
-                <Label>Add new tag</Label>
-                <Icon class="material-icons">add</Icon>
-            </Button>
-        </Header>
-    </Panel>
-</Accordion>
+    </Accordion>
+{/if}
 
 <Snackbar bind:this={snackbarTagChangeSaved} timeoutMs=4000>
     <Label>{snackbarTagChangeSavedText}</Label>

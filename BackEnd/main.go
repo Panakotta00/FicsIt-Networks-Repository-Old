@@ -223,8 +223,6 @@ func main() {
 	gqlConfig.Directives.IsAdmin = graph.IsAdminDirective
 	gqlConfig.Directives.OwnsOrIsAdmin = graph.OwnsOrIsAdminDirective
 
-	e.Use(auth.AuthenticationMiddleware)
-
 	e.Use(dataloader.Middleware)
 
 	e.GET("/package", listPackages)
@@ -241,7 +239,7 @@ func main() {
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(gqlConfig))
 
 	e.Any("/playground", echo.WrapHandler(playground.Handler("GraphQL playground", "/query")))
-	e.Any("/query", echo.WrapHandler(srv))
+	e.Any("/query", echo.WrapHandler(srv), auth.AuthenticationMiddleware)
 
 	e.Logger.Fatal(e.Start(":8000"))
 }

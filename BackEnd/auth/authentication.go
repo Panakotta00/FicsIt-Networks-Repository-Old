@@ -38,13 +38,19 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
 		tokenCookie, err := ctx.Cookie("token")
+		var tokenString string
 
 		if err != nil || tokenCookie == nil {
-			return finish(ctx, nil)
+			tokenString = ctx.Request().Header.Get("Authorization")
+			if tokenString == "" {
+				return finish(ctx, nil)
+			}
+		} else {
+			tokenString = tokenCookie.Value
 		}
 
 		var tokenClaims = TokenClaims{}
-		_, err = jwt.ParseWithClaims(tokenCookie.Value, &tokenClaims, func(token *jwt.Token) (interface{}, error) {
+		_, err = jwt.ParseWithClaims(tokenString, &tokenClaims, func(token *jwt.Token) (interface{}, error) {
 			return JWTSecret, nil
 		})
 		if err != nil {

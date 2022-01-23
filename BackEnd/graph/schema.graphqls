@@ -108,7 +108,7 @@ type Mutation {
 #    createUser(user: NewUser!): User!
 #    updateUser(user: UpdateUser!): Boolean!
 #    deleteUser(userId: ID!): Boolean!
-    @isAdmin createTag(tag: NewTag!): Tag!
-    @isAdmin updateTag(tag: UpdateTag!): Boolean!
-    @isAdmin deleteTag(tagId: ID!): Boolean!
+    createTag(tag: NewTag!): Tag! @isAdmin
+    updateTag(tag: UpdateTag!): Boolean! @isAdmin
+    deleteTag(tagId: ID!): Boolean! @isAdmin
 }
