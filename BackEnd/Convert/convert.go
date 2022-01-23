@@ -20,6 +20,7 @@ type ConverterDB interface {
 	// goverter:ignore Packages
 	// goverter:map EMail Email
 	ConvertUser(Database.User) model.User
+	ConvertUserP(*Database.User) *model.User
 
 	ConvertTag(Database.Tag) model.Tag
 	ConvertTagP(*Database.Tag) *model.Tag

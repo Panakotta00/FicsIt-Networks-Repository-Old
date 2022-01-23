@@ -4,7 +4,6 @@
     import Chip, { Set, TrailingAction, Text } from '@smui/chips';
     import {placeCaretAtEnd, setTextRange} from "$lib/util";
     import MenuSurface, { MenuSurfaceComponentDev } from '@smui/menu-surface';
-    import Tooltip, {Wrapper} from '@smui/tooltip';
 
     export let tags : Tag_Base[] = null
     export let editable : boolean|null = undefined
@@ -15,7 +14,6 @@
     export var allowedTags : Tag_Base[]
 
     let newTagText : string
-    let lastTagText : string
 
     function setTagText(text : string) {
         newTagText = text

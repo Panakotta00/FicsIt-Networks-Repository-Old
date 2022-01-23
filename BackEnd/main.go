@@ -2,6 +2,7 @@ package main
 
 import (
 	"FINRepository/Database"
+	"FINRepository/Database/Cache"
 	"FINRepository/Util"
 	"FINRepository/auth"
 	"FINRepository/dataloader"
@@ -214,6 +215,14 @@ func main() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			newCtx := context.WithValue(ctx.Request().Context(), "snowflake", idGen)
+			ctx.SetRequest(ctx.Request().WithContext(newCtx))
+			return next(ctx)
+		}
+	})
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			newCtx := Cache.CtxWithDBCache(ctx.Request().Context())
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			return next(ctx)
 		}

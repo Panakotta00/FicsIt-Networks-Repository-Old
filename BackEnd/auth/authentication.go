@@ -2,6 +2,7 @@ package auth
 
 import (
 	"FINRepository/Database"
+	"FINRepository/Database/Cache"
 	"FINRepository/Util"
 	"context"
 	"errors"
@@ -63,6 +64,9 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			ctx.SetCookie(&http.Cookie{Name: "token", RawExpires: "-1"})
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get authenticated user")
 		}
+
+		newCtx := Cache.CtxWithDBAuthCache(ctx.Request().Context())
+		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 		return finish(ctx, &user)
 	}

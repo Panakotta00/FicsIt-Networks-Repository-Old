@@ -3,6 +3,7 @@ package dataloader
 import (
 	"FINRepository/Convert/generated"
 	"FINRepository/Database"
+	"FINRepository/Database/Cache"
 	"FINRepository/Util"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
@@ -43,9 +44,27 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 				fetch: func(ids []graphtypes.ID) (users []*model.User, errs []error) {
 					users = make([]*model.User, len(ids))
 					errs = make([]error, len(ids))
+					dbCache := Cache.DBCacheFromCtx(ctx)
 
+					// try to load users from cache
+					var idsToQueryMap = map[graphtypes.ID]int{}
+					var idsToQuery []graphtypes.ID
+					for i, id := range ids {
+						if user := dbCache.GetByPK(&Database.User{}, Database.ID(id)); user == nil {
+							idsToQueryMap[id] = i
+							idsToQuery = append(idsToQuery, id)
+						} else {
+							conv := generated.ConverterDBImpl{}
+							users[i] = conv.ConvertUserP((*user).(*Database.User))
+						}
+					}
+					if len(idsToQuery) < 1 {
+						return
+					}
+
+					// query non-cached users from DB
 					var dbUsers []*Database.User
-					if err := Util.DBFromContext(ctx).Find(&dbUsers, ids).Error; err != nil {
+					if err := Util.DBFromContext(ctx).Find(&dbUsers, idsToQuery).Error; err != nil {
 						e := errors.New("unable to get users by ids")
 						for i := 0; i < len(ids); i++ {
 							errs[i] = e
@@ -53,12 +72,14 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 						return
 					}
 
+					// cache and convert non-cached users
 					var idMap = make(map[graphtypes.ID]model.User, len(dbUsers))
 					conv := generated.ConverterDBImpl{}
 					for _, user := range dbUsers {
+						dbCache.Add(user)
 						idMap[graphtypes.ID(user.ID)] = conv.ConvertUser(*user)
 					}
-					for i, id := range ids {
+					for id, i := range idsToQueryMap {
 						user, ok := idMap[id]
 						if ok {
 							users[i] = &user
