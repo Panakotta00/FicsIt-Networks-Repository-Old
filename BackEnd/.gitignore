@@ -2,7 +2,7 @@
 .idea
 
 # Generate Go Files
-dataloader
+dataloader/*
 !dataloader/dataloader.go
 Convert/generated
 graph/generated

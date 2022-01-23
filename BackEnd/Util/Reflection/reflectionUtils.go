@@ -6,19 +6,36 @@ import (
 	"strings"
 )
 
-// TODO: Use cache lookup tables for field search
+type fieldToMetaSubKey struct {
+	Type reflect.Type
+	MetaKey string
+	MetaSubstring string
+}
+var fieldToMetaSubMap = map[fieldToMetaSubKey]int{}
 func FindFieldWithMetaSubstring(obj interface{}, metaKey string, substring string) (*reflect.Value, *reflect.StructField){
 	objType := reflect.TypeOf(obj).Elem()
 	objValue := reflect.ValueOf(obj).Elem()
-	for i := 0; i < objType.NumField(); i++ {
-		f := objType.Field(i)
-		v := objValue.Field(i)
-		meta := f.Tag.Get(metaKey)
-		if strings.Contains(meta, substring) {
-			return &v, &f
+	key := fieldToMetaSubKey{objType, metaKey, substring}
+	fieldIndex, ok := fieldToMetaSubMap[key]
+
+	if !ok {
+		for i := 0; i < objType.NumField(); i++ {
+			f := objType.Field(i)
+			meta := f.Tag.Get(metaKey)
+			if strings.Contains(meta, substring) {
+				fieldToMetaSubMap[key] = i
+				break
+			}
 		}
 	}
-	return nil, nil
+
+	if fieldIndex < 0 {
+		return nil, nil
+	} else {
+		v := objValue.Field(fieldIndex)
+		f := objType.Field(fieldIndex)
+		return &v, &f
+	}
 }
 
 type fieldToMetaKey struct {
