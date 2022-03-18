@@ -2,13 +2,15 @@ package auth
 
 import "context"
 
-type Authorizeable interface {
+type Authorizable interface {
+	GetType() string
+	GetID() string
 }
 
 type Authorizer interface {
-	Authorize(Resource Authorizeable, Subject Authorizeable, Permission string)
-	Permit(Resource Authorizeable, Subject Authorizeable, Relation string)
-	RemovePermit(Resource Authorizeable, Subject Authorizeable, Relation string)
+	Authorize(ctx context.Context, resource Authorizable, subject Authorizable, permission string) (bool, error)
+	Permit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) error
+	RemovePermit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) error
 }
 
 func CtxWithAuthorizer(ctx context.Context, authorizer Authorizer) context.Context {

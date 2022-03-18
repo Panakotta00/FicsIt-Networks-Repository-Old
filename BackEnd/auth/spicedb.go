@@ -16,10 +16,40 @@ type Authorizer_SpiceDB struct {
 	client *authzed.Client
 }
 
-func (*Authorizer_SpiceDB) Authorize(Resource Authorizeable, Subject Authorizeable, Permission string) {
+func AuthorizableToObjRef(auth Authorizable) *pb.ObjectReference {
+	return &pb.ObjectReference{
+		ObjectType: auth.GetType(),
+		ObjectId:   auth.GetID(),
+	}
 }
-func (*Authorizer_SpiceDB) Permit(Resource Authorizeable, Subject Authorizeable, Relation string) {}
-func (*Authorizer_SpiceDB) RemovePermit(Resource Authorizeable, Subject Authorizeable, Relation string) {
+
+func AuthorizableToSubRef(auth Authorizable) *pb.SubjectReference {
+	return &pb.SubjectReference{
+		Object: &pb.ObjectReference{
+			ObjectType: auth.GetType(),
+			ObjectId:   auth.GetID(),
+		},
+	}
+}
+
+func (db *Authorizer_SpiceDB) Authorize(ctx context.Context, resource Authorizable, subject Authorizable, permission string) (bool, error) {
+	resp, err := db.client.CheckPermission(ctx, &pb.CheckPermissionRequest{
+		Resource:   AuthorizableToObjRef(resource),
+		Permission: permission,
+		Subject:    AuthorizableToSubRef(subject),
+	})
+	if err != nil {
+		return false, err
+	}
+	return resp.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION, nil
+}
+
+func (*Authorizer_SpiceDB) Permit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) {
+
+}
+
+func (*Authorizer_SpiceDB) RemovePermit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) {
+
 }
 
 func NewSpiceDBAuthorizer(host string, token string) (*Authorizer_SpiceDB, error) {
