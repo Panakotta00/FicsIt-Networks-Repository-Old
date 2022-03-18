@@ -4,9 +4,10 @@ go 1.16
 
 require (
 	github.com/99designs/gqlgen v0.15.1
+	github.com/authzed/authzed-go v0.5.0
+	github.com/authzed/grpcutil v0.0.0-20220104222419-f813f77722e5
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/jackc/pgx/v4 v4.14.1 // indirect
 	github.com/jmattheis/goverter v0.3.0
 	github.com/labstack/echo/v4 v4.6.3

@@ -1,0 +1,23 @@
+definition user {}
+
+definition global {
+  relation administrator: user
+
+  permission edit_tags = administrator
+  permission moderate_users = administrator
+}
+
+definition package {
+    relation global: global
+    relation writer: user
+
+    permission write = writer
+    permission moderate = global->user
+    permission view_all = write + moderate
+}
+
+definition release {
+    relation package: package
+
+    permission write = package->write
+}

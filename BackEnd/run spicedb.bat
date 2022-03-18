@@ -1,0 +1,1 @@
+docker run --rm -it -p 50051:50051 -p 8080:8080 authzed/spicedb:latest serve --grpc-preshared-key 'somerandomkeyhere'

@@ -189,6 +189,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	port, err = strconv.Atoi(os.Getenv("FINREPO_SPICEDB_PORT"))
+	if err != nil || port < 0 {
+		log.Fatal("Invalid SpiceDB Port: %v", err)
+	}
+	connectionString = fmt.Sprintf("%s:%d", os.Getenv("FINREPO_SPICEDB_HOST"), port)
+
+	spicedb, err := auth.NewSpiceDBAuthorizer(connectionString, os.Getenv("FINREPO_SPICEDB_TOKEN"))
+	if err != nil {
+		log.Fatalf("Failed to start SpiceDB Client: %v", err)
+	}
+
 	node, err := strconv.ParseInt(os.Getenv("FINREPO_NODE"), 10, 64)
 	if err != nil || node < 0 {
 		log.Fatal("Invalid Node: %v", err)
@@ -203,6 +214,14 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 	}))
+
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			newCtx := auth.CtxWithAuthorizer(ctx.Request().Context(), spicedb)
+			ctx.SetRequest(ctx.Request().WithContext(newCtx))
+			return next(ctx)
+		}
+	})
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
