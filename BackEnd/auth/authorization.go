@@ -7,8 +7,8 @@ type Authorizeable interface {
 
 type Authorizer interface {
 	Authorize(Resource Authorizeable, Subject Authorizeable, Permission string)
-	Permit(Resource Authorizeable, Subject Authorizeable, Permission string)
-	RemovePermit(Resource Authorizeable, Subject Authorizeable, Permission string)
+	Permit(Resource Authorizeable, Subject Authorizeable, Relation string)
+	RemovePermit(Resource Authorizeable, Subject Authorizeable, Relation string)
 }
 
 func CtxWithAuthorizer(ctx context.Context, authorizer Authorizer) context.Context {

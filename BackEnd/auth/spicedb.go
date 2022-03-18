@@ -16,9 +16,11 @@ type Authorizer_SpiceDB struct {
 	client *authzed.Client
 }
 
-func (*Authorizer_SpiceDB) Authorize(Subject int64, Object int64, Relation string)    {}
-func (*Authorizer_SpiceDB) Permit(Subject int64, Object int64, Relation string)       {}
-func (*Authorizer_SpiceDB) RemovePermit(Subject int64, Object int64, Relation string) {}
+func (*Authorizer_SpiceDB) Authorize(Resource Authorizeable, Subject Authorizeable, Permission string) {
+}
+func (*Authorizer_SpiceDB) Permit(Resource Authorizeable, Subject Authorizeable, Relation string) {}
+func (*Authorizer_SpiceDB) RemovePermit(Resource Authorizeable, Subject Authorizeable, Relation string) {
+}
 
 func NewSpiceDBAuthorizer(host string, token string) (*Authorizer_SpiceDB, error) {
 	auth := new(Authorizer_SpiceDB)
