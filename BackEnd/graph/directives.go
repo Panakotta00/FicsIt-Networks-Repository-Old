@@ -5,6 +5,7 @@ import (
 	"FINRepository/Database"
 	"FINRepository/Util"
 	UtilReflection "FINRepository/Util/Reflection"
+	"FINRepository/auth"
 	"FINRepository/graph/model"
 	"context"
 	"fmt"
@@ -119,4 +120,29 @@ func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.R
 	}
 
 	return nil, fmt.Errorf("Unable to authorize, Invalid GQL Directive Param, incomplete")
+}
+
+func PermissionDirective(ctx context.Context, obj interface{}, next graphql.Resolver, permission string) (interface{}, error) {
+	user := ctx.Value("auth").(*Database.User)
+
+	if user == nil {
+		return nil, fmt.Errorf("Access denied")
+	}
+
+	authorizer := auth.AuthorizerFromCtx(ctx)
+
+	dbObj := generic.ConvertToDatabase(obj)
+	if dbObj == nil {
+		return nil, fmt.Errorf("Internal Error: Unable to convert input to database object")
+	}
+
+	success, err := authorizer.Authorize(ctx, dbObj.(auth.Authorizable), user, permission)
+
+	if success {
+		return next(ctx)
+	} else if err == nil {
+		return nil, fmt.Errorf("Access denied")
+	} else {
+		return nil, fmt.Errorf("Internal Error: %v", err)
+	}
 }

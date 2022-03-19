@@ -3,6 +3,7 @@ package Database
 import (
 	"FINRepository/Util"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 type User struct {
@@ -17,6 +18,14 @@ type User struct {
 
 func (User) TableName() string {
 	return "Repository.User"
+}
+
+func (u *User) GetType() string {
+	return "user"
+}
+
+func (u *User) GetID() string {
+	return strconv.FormatInt(int64(u.ID), 10)
 }
 
 type UserChange struct {

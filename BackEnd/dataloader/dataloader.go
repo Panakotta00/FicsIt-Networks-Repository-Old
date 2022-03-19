@@ -5,6 +5,7 @@ import (
 	"FINRepository/Database"
 	"FINRepository/Database/Cache"
 	"FINRepository/Util"
+	"FINRepository/auth"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
 	"context"
@@ -199,6 +200,10 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					var idMap = make(map[graphtypes.ID]*model.Package, len(dbPackages))
 					conv := generated.ConverterDBImpl{}
 					for _, pack := range dbPackages {
+						if !auth.AuthorizeViewPackage(ctx, pack) {
+							idMap[graphtypes.ID(pack.ID)] = nil
+							continue
+						}
 						v := conv.ConvertPackage(*pack)
 						idMap[graphtypes.ID(pack.ID)] = &v
 					}

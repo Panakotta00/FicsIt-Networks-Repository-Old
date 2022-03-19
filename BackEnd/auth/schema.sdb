@@ -1,18 +1,23 @@
-definition user {}
+definition user {
+    relation global: global
+    relation self: self
+
+    permission view_all = self + global->admin
+}
 
 definition global {
-  relation administrator: user
+  relation admin: user
 
-  permission edit_tags = administrator
-  permission moderate_users = administrator
+  permission edit_tags = admin
+  permission moderate_users = admin
 }
 
 definition package {
     relation global: global
-    relation writer: user
+    relation owner: user
 
-    permission write = writer
-    permission moderate = global->user
+    permission write = owner
+    permission moderate = global->admin
     permission view_all = write + moderate
 }
 
@@ -20,4 +25,6 @@ definition release {
     relation package: package
 
     permission write = package->write
+    permission moderate = package->moderate
+    permission view_all = write + moderate
 }

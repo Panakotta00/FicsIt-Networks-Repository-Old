@@ -1,5 +1,6 @@
 directive @isAdmin on FIELD_DEFINITION|INPUT_FIELD_DEFINITION|MUTATION
 directive @ownsOrIsAdmin(owningField: String!) on FIELD_DEFINITION|INPUT_FIELD_DEFINITION
+directive @permission(permission: String!) on FIELD_DEFINITION|INPUT_FIELD_DEFINITION
 
 type Package {
   id: ID!
@@ -8,7 +9,7 @@ type Package {
   description: String!
   sourceLink: String
   creator: User!
-  verified: Boolean! @ownsOrIsAdmin(owningField: "creator.id")
+  verified: Boolean! @permission(permission: "view_all")
   tags: [Tag!]!
   releases: [Release!]!
 }
@@ -18,8 +19,8 @@ type User {
   name: String!
   bio: String!
   admin: Boolean!
-  email: String! @ownsOrIsAdmin(owningField: "id")
-  verified: Boolean! @ownsOrIsAdmin(owningField: "id")
+  email: String! @permission(permission: "view_all")
+  verified: Boolean! @permission(permission: "view_all")
   packages: [Package!]
 }
 
@@ -39,7 +40,7 @@ type Release {
     sourceLink: String!
     version: String!
     finVersion: String!
-    verified: Boolean! @ownsOrIsAdmin(owningField: "package.creator.id")
+    verified: Boolean! @permission(permission: "view_all")
     hash: String!
 }
 

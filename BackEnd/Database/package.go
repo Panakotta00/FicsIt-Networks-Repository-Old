@@ -4,6 +4,7 @@ import (
 	"FINRepository/Util"
 	"gorm.io/gorm"
 	"log"
+	"strconv"
 )
 
 type Package struct {
@@ -20,6 +21,14 @@ type Package struct {
 
 func (Package) TableName() string {
 	return "Repository.Package"
+}
+
+func (p *Package) GetType() string {
+	return "package"
+}
+
+func (p *Package) GetID() string {
+	return strconv.FormatInt(int64(p.ID), 10)
 }
 
 type PackageChange struct {

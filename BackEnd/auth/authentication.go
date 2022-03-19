@@ -206,3 +206,7 @@ func OAuth2Request(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, response)
 	}
 }
+
+func UserFromCtx(ctx context.Context) *Database.User {
+	return ctx.Value("auth").(*Database.User)
+}

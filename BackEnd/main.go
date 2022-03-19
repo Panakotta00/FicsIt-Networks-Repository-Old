@@ -250,6 +250,7 @@ func main() {
 	gqlConfig := generated.Config{Resolvers: &graph.Resolver{}}
 	gqlConfig.Directives.IsAdmin = graph.IsAdminDirective
 	gqlConfig.Directives.OwnsOrIsAdmin = graph.OwnsOrIsAdminDirective
+	gqlConfig.Directives.Permission = graph.PermissionDirective
 
 	e.Use(dataloader.Middleware)
 

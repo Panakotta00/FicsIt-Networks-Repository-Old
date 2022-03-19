@@ -7,6 +7,7 @@ import (
 	generated1 "FINRepository/Convert/generated"
 	"FINRepository/Database"
 	"FINRepository/Util"
+	"FINRepository/auth"
 	"FINRepository/dataloader"
 	"FINRepository/graph/generated"
 	"FINRepository/graph/graphtypes"
@@ -103,6 +104,7 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 	for i, field := range colFields {
 		fields[i] = fieldMap[field.Name]
 	}
+	fields = append(fields, "package_verified")
 	query = query.Select(fields)
 
 	var packages []*Database.Package
@@ -112,12 +114,17 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 
 	var packs = make([]*model.Package, len(packages))
 	var conv = generated1.ConverterDBImpl{}
-	for i, pack := range packages {
+	i := 0
+	for _, pack := range packages {
+		if !auth.AuthorizeViewPackage(ctx, pack) {
+			continue
+		}
 		p := conv.ConvertPackage(*pack)
 		packs[i] = &p
+		i = i + 1
 	}
 
-	return packs, nil
+	return packs[:i], nil
 }
 
 func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID) ([]*model.Package, error) {
@@ -140,6 +147,7 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 	for i, field := range colFields {
 		fields[i] = fieldMap[field.Name]
 	}
+	fields = append(fields, "package_verified")
 	query = query.Select(fields)
 
 	var packages []*Database.Package
@@ -150,12 +158,17 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 	var idMap = make(map[graphtypes.ID]*model.Package, len(packages))
 	var conv = generated1.ConverterDBImpl{}
 	for _, pack := range packages {
+		if !auth.AuthorizeViewPackage(ctx, pack) {
+			idMap[graphtypes.ID(pack.ID)] = nil
+		}
 		p := conv.ConvertPackage(*pack)
 		idMap[graphtypes.ID(pack.ID)] = &p
 	}
 	var packs = make([]*model.Package, len(ids))
 	for i, id := range ids {
-		packs[i] = idMap[id]
+		if idMap[id] != nil {
+			packs[i] = idMap[id]
+		}
 	}
 
 	return packs, nil

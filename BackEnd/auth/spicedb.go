@@ -6,6 +6,7 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/authzed-go/v1"
 	"github.com/authzed/grpcutil"
+	"google.golang.org/grpc"
 	"log"
 )
 
@@ -39,17 +40,18 @@ func (db *Authorizer_SpiceDB) Authorize(ctx context.Context, resource Authorizab
 		Subject:    AuthorizableToSubRef(subject),
 	})
 	if err != nil {
-		return false, err
+		log.Printf("Authorization error: %v", err)
+		return false, nil
 	}
 	return resp.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION, nil
 }
 
-func (*Authorizer_SpiceDB) Permit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) {
-
+func (*Authorizer_SpiceDB) AddRelation(ctx context.Context, resource Authorizable, subject Authorizable, relation string) error {
+	return nil
 }
 
-func (*Authorizer_SpiceDB) RemovePermit(ctx context.Context, resource Authorizable, subject Authorizable, relation string) {
-
+func (*Authorizer_SpiceDB) RemoveRelation(ctx context.Context, resource Authorizable, subject Authorizable, relation string) error {
+	return nil
 }
 
 func NewSpiceDBAuthorizer(host string, token string) (*Authorizer_SpiceDB, error) {
@@ -60,6 +62,7 @@ func NewSpiceDBAuthorizer(host string, token string) (*Authorizer_SpiceDB, error
 		// grpcutil.WithBearerToken("t_your_token_here_1234567deadbeef"),
 		// grpcutil.WithSystemCerts(grpcutil.VerifyCA),
 		grpcutil.WithInsecureBearerToken(token),
+		grpc.WithInsecure(),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize client: %s", err)
