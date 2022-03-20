@@ -1,6 +1,6 @@
 directive @isAdmin on FIELD_DEFINITION|INPUT_FIELD_DEFINITION|MUTATION
 directive @ownsOrIsAdmin(owningField: String!) on FIELD_DEFINITION|INPUT_FIELD_DEFINITION
-directive @permission(permission: String!) on FIELD_DEFINITION|INPUT_FIELD_DEFINITION
+directive @permission(permission: String!) on FIELD_DEFINITION
 
 type Package {
   id: ID!

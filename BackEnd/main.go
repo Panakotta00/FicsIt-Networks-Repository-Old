@@ -5,6 +5,7 @@ import (
 	"FINRepository/Database/Cache"
 	"FINRepository/Util"
 	"FINRepository/auth"
+	"FINRepository/auth/perm"
 	"FINRepository/dataloader"
 	"FINRepository/graph"
 	"FINRepository/graph/generated"
@@ -217,7 +218,7 @@ func main() {
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			newCtx := auth.CtxWithAuthorizer(ctx.Request().Context(), spicedb)
+			newCtx := perm.CtxWithAuthorizer(ctx.Request().Context(), spicedb)
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			return next(ctx)
 		}

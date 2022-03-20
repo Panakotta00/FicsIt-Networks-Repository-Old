@@ -2,7 +2,9 @@ package Database
 
 import (
 	"FINRepository/Util"
+	"FINRepository/auth/perm"
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -35,19 +37,31 @@ func TagGet(db *gorm.DB, tagID int64) (*Tag, error) {
 }
 
 func CreateTag(ctx context.Context, tagName string, tagDescription string) (*Tag, error) {
+	success, _ := perm.AuthorizerFromCtx(ctx).Authorize(ctx, &perm.Global, UserFromCtx(ctx), "edit_tags")
+	if !success {
+		return nil, fmt.Errorf("access denied")
+	}
 	tag := Tag{ID: ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()), Name: tagName, Description: tagDescription}
 	err := Util.DBFromContext(ctx).Create(&tag).Error
 	return &tag, err
 }
 
-func UpdateTag(ctx context.Context, tagId ID, tagName *string, tagDescription *string) bool {
+func UpdateTag(ctx context.Context, tagId ID, tagName *string, tagDescription *string) (bool, error) {
+	success, _ := perm.AuthorizerFromCtx(ctx).Authorize(ctx, &perm.Global, UserFromCtx(ctx), "edit_tags")
+	if !success {
+		return false, fmt.Errorf("access denied")
+	}
 	fields := Util.FilterUpdateFields(map[string]interface{}{"tag_name": tagName, "tag_description": tagDescription})
 	result := Util.DBFromContext(ctx).Model(&Tag{}).Where("tag_id = ?", tagId).Updates(fields)
-	return result.Error == nil && result.RowsAffected == 1
+	return result.Error == nil && result.RowsAffected == 1, nil
 }
 
-func DeleteTag(ctx context.Context, tagId ID) bool {
+func DeleteTag(ctx context.Context, tagId ID) (bool, error) {
+	success, _ := perm.AuthorizerFromCtx(ctx).Authorize(ctx, &perm.Global, UserFromCtx(ctx), "edit_tags")
+	if !success {
+		return false, fmt.Errorf("access denied")
+	}
 	Util.DBFromContext(ctx).Where("tag_id = ?", tagId).Delete(&PackageTag{})
 	result := Util.DBFromContext(ctx).Where("tag_id = ?", tagId).Delete(&Tag{})
-	return result.Error == nil && result.RowsAffected == 1
+	return result.Error == nil && result.RowsAffected == 1, nil
 }

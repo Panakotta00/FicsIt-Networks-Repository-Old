@@ -5,7 +5,6 @@ import (
 	"FINRepository/Database"
 	"FINRepository/Database/Cache"
 	"FINRepository/Util"
-	"FINRepository/auth"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
 	"context"
@@ -170,8 +169,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					var idMap = make(map[graphtypes.ID][]*model.Release, len(dbReleases))
 					conv := generated.ConverterDBImpl{}
 					for _, release := range dbReleases {
-						r := conv.ConvertRelease(*release)
 						id := graphtypes.ID(release.PackageID)
+						r := conv.ConvertRelease(*release)
 						idMap[id] = append(idMap[id], &r)
 					}
 					for i, id := range ids {
@@ -200,12 +199,7 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					var idMap = make(map[graphtypes.ID]*model.Package, len(dbPackages))
 					conv := generated.ConverterDBImpl{}
 					for _, pack := range dbPackages {
-						if !auth.AuthorizeViewPackage(ctx, pack) {
-							idMap[graphtypes.ID(pack.ID)] = nil
-							continue
-						}
-						v := conv.ConvertPackage(*pack)
-						idMap[graphtypes.ID(pack.ID)] = &v
+						idMap[graphtypes.ID(pack.ID)] = conv.ConvertPackageP(pack)
 					}
 					for i, id := range ids {
 						packages[i] = idMap[id]
@@ -262,9 +256,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					var idMap = make(map[graphtypes.ID][]*model.Package, len(dbPackages))
 					conv := generated.ConverterDBImpl{}
 					for _, pack := range dbPackages {
-						v := conv.ConvertPackage(*pack)
 						id := graphtypes.ID(pack.CreatorID)
-						idMap[id] = append(idMap[id], &v)
+						idMap[id] = append(idMap[id], conv.ConvertPackageP(pack))
 					}
 					for i, id := range ids {
 						packages[i] = idMap[id]

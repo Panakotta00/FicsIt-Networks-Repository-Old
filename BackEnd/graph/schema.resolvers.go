@@ -15,9 +15,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/99designs/gqlgen/graphql"
+	"log"
 )
 
 func (r *mutationResolver) CreatePackage(ctx context.Context, packageArg model.NewPackage) (*model.Package, error) {
@@ -60,15 +59,19 @@ func (r *mutationResolver) CreateTag(ctx context.Context, tag model.NewTag) (*mo
 }
 
 func (r *mutationResolver) UpdateTag(ctx context.Context, tag model.UpdateTag) (bool, error) {
-	return Database.UpdateTag(ctx, Database.ID(tag.ID), tag.Name, tag.Description), nil
+	return Database.UpdateTag(ctx, Database.ID(tag.ID), tag.Name, tag.Description)
 }
 
 func (r *mutationResolver) DeleteTag(ctx context.Context, tagID graphtypes.ID) (bool, error) {
-	return Database.DeleteTag(ctx, Database.ID(tagID)), nil
+	return Database.DeleteTag(ctx, Database.ID(tagID))
 }
 
-func (r *packageResolver) Creator(ctx context.Context, obj *model.Package) (*model.User, error) {
-	return dataloader.For(ctx).UserById.Load(obj.Creator.ID)
+func (r *packageResolver) Creator(ctx context.Context, obj *model.Package) (user *model.User, err error) {
+	user, err = dataloader.For(ctx).UserById.Load(obj.Creator.ID)
+	if err == nil && !auth.AuthorizeVerification(ctx, user) {
+		user = nil
+	}
+	return
 }
 
 func (r *packageResolver) Tags(ctx context.Context, obj *model.Package) ([]*model.Tag, error) {
@@ -77,11 +80,15 @@ func (r *packageResolver) Tags(ctx context.Context, obj *model.Package) ([]*mode
 		return nil, err
 	}
 	tags, _ := dataloader.For(ctx).TagById.LoadAll(tagIds)
-	return tags, nil
+	return auth.AuthorizeTagModels(ctx, tags), nil
 }
 
 func (r *packageResolver) Releases(ctx context.Context, obj *model.Package) ([]*model.Release, error) {
-	return dataloader.For(ctx).ReleasesByPackage.Load(obj.ID)
+	releases, err := dataloader.For(ctx).ReleasesByPackage.Load(obj.ID)
+	if err != nil {
+		return releases, err
+	}
+	return auth.AuthorizeReleaseModels(ctx, releases), nil
 }
 
 func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) ([]*model.Package, error) {
@@ -205,11 +212,16 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 		u := conv.ConvertUser(*user)
 		idMap[graphtypes.ID(user.ID)] = &u
 	}
-	var packs = make([]*model.User, len(ids))
-	for i, id := range ids {
-		packs[i] = idMap[id]
+	var users = make([]*model.User, len(ids))
+	i := 0
+	for _, id := range ids {
+		if !auth.AuthorizeUserModel(ctx, idMap[id]) {
+			continue
+		}
+		users[i] = idMap[id]
+		i = i + 1
 	}
-	return packs, nil
+	return users[:i], nil
 }
 
 func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
@@ -218,13 +230,25 @@ func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
 		log.Printf("Error: %v", err)
 		return nil, errors.New("unable to get all tags")
 	}
+	editTags := auth.AuthorizeManageTags(ctx)
 	conv := generated1.ConverterDBImpl{}
-	tags := conv.ConvertTagPA(*dbTags)
-	return tags, nil
+	mTags := make([]*model.Tag, len(*dbTags))
+	i := 0
+	for _, tag := range *dbTags {
+		if tag.Verified || editTags {
+			mTags[i] = conv.ConvertTagP(tag)
+			i = i + 1
+		}
+	}
+	return mTags[:i], nil
 }
 
-func (r *releaseResolver) Package(ctx context.Context, obj *model.Release) (*model.Package, error) {
-	return dataloader.For(ctx).PackageById.Load(obj.ID)
+func (r *releaseResolver) Package(ctx context.Context, obj *model.Release) (pack *model.Package, err error) {
+	pack, err = dataloader.For(ctx).PackageById.Load(obj.ID)
+	if err == nil && !auth.AuthorizePackageModel(ctx, pack) {
+		pack = nil
+	}
+	return
 }
 
 func (r *tagResolver) Packages(ctx context.Context, obj *model.Tag) ([]*model.Package, error) {

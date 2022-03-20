@@ -5,7 +5,7 @@ import (
 	"FINRepository/Database"
 	"FINRepository/Util"
 	UtilReflection "FINRepository/Util/Reflection"
-	"FINRepository/auth"
+	"FINRepository/auth/perm"
 	"FINRepository/graph/model"
 	"context"
 	"fmt"
@@ -129,14 +129,14 @@ func PermissionDirective(ctx context.Context, obj interface{}, next graphql.Reso
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	authorizer := auth.AuthorizerFromCtx(ctx)
+	authorizer := perm.AuthorizerFromCtx(ctx)
 
 	dbObj := generic.ConvertToDatabase(obj)
 	if dbObj == nil {
 		return nil, fmt.Errorf("Internal Error: Unable to convert input to database object")
 	}
 
-	success, err := authorizer.Authorize(ctx, dbObj.(auth.Authorizable), user, permission)
+	success, err := authorizer.Authorize(ctx, dbObj.(perm.Authorizable), user, permission)
 
 	if success {
 		return next(ctx)

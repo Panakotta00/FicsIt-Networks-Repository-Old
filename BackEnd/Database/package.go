@@ -17,6 +17,7 @@ type Package struct {
 	CreatorS    *User   `json:"creator,omitempty" gorm:"foreignKey:CreatorID"`
 	Tags        []*Tag  `json:"tags,omitempty" gorm:"many2many:Package_Tag;foreignKey:package_id;joinForeignKey:package_id;References:tag_id;joinReferences:tag_id"`
 	Verified    bool    `json:"verified" gorm:"column:package_verified;not null;default:false"`
+	ZedToken    string  `gorm:"column:package_zedtoken"`
 }
 
 func (Package) TableName() string {

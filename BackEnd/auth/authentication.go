@@ -4,6 +4,7 @@ import (
 	"FINRepository/Database"
 	"FINRepository/Database/Cache"
 	"FINRepository/Util"
+	"FINRepository/auth/perm"
 	"context"
 	"errors"
 	"fmt"
@@ -78,7 +79,22 @@ func AuthenticateUser(c echo.Context, email string, username string) (string, er
 	query := Util.DBFromContext(ctx).Where("user_email = ?", email).Find(&user)
 	if err := query.Error; err != nil || query.RowsAffected < 1 {
 		// no existing account found, try to create one
-		user = Database.User{ID: Database.ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()), Name: username, EMail: email}
+		user = Database.User{
+			ID:    Database.ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()),
+			Name:  username,
+			EMail: email,
+		}
+		_, err := perm.AuthorizerFromCtx(ctx).AddRelation(ctx, &user, &user, "self")
+		if err != nil {
+			log.Printf("Error Auth User (perm self-ref): %v", err)
+			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
+		}
+		token, err := perm.AuthorizerFromCtx(ctx).AddRelation(ctx, &user, &perm.Global, "global")
+		if err != nil {
+			log.Printf("Error Auth User (perm global): %v", err)
+			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
+		}
+		user.ZedToken = token
 		if err = Util.DBFromContext(ctx).Create(&user).Error; err != nil {
 			log.Printf("Error Auth User: %e", err)
 			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
@@ -205,8 +221,4 @@ func OAuth2Request(ctx echo.Context) error {
 		}
 		return ctx.JSON(http.StatusOK, response)
 	}
-}
-
-func UserFromCtx(ctx context.Context) *Database.User {
-	return ctx.Value("auth").(*Database.User)
 }

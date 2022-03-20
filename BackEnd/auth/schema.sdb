@@ -1,6 +1,6 @@
 definition user {
     relation global: global
-    relation self: self
+    relation self: user
 
     permission view_all = self + global->admin
 }

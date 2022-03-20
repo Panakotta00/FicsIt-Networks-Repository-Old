@@ -14,6 +14,7 @@ type User struct {
 	Admin       bool    `json:"admin" gorm:"column:user_admin;not nullM;default:false"`
 	EMail       string  `json:"email" gorm:"column:user_email;not null"`
 	Verified    bool    `json:"verified" gorm:"column:user_verified;not null;default:false"`
+	ZedToken    string  `gorm:"column:user_zedtoken"`
 }
 
 func (User) TableName() string {
