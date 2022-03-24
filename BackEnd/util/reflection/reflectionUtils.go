@@ -1,18 +1,20 @@
-package UtilReflection
+package utilReflection
 
 import (
-	"FINRepository/Database"
+	"FINRepository/database"
 	"reflect"
 	"strings"
 )
 
 type fieldToMetaSubKey struct {
-	Type reflect.Type
-	MetaKey string
+	Type          reflect.Type
+	MetaKey       string
 	MetaSubstring string
 }
+
 var fieldToMetaSubMap = map[fieldToMetaSubKey]int{}
-func FindFieldWithMetaSubstring(obj interface{}, metaKey string, substring string) (*reflect.Value, *reflect.StructField){
+
+func FindFieldWithMetaSubstring(obj interface{}, metaKey string, substring string) (*reflect.Value, *reflect.StructField) {
 	objType := reflect.TypeOf(obj).Elem()
 	objValue := reflect.ValueOf(obj).Elem()
 	key := fieldToMetaSubKey{objType, metaKey, substring}
@@ -39,11 +41,13 @@ func FindFieldWithMetaSubstring(obj interface{}, metaKey string, substring strin
 }
 
 type fieldToMetaKey struct {
-	Type reflect.Type
-	MetaKey string
+	Type         reflect.Type
+	MetaKey      string
 	MetaContents string
 }
+
 var fieldToMetaMap = map[fieldToMetaKey]int{}
+
 func FindFieldWithMeta(obj interface{}, metaKey string, contents string) (*reflect.Value, *reflect.StructField) {
 	objType := reflect.TypeOf(obj).Elem()
 	objValue := reflect.ValueOf(obj).Elem()
@@ -70,10 +74,10 @@ func FindFieldWithMeta(obj interface{}, metaKey string, contents string) (*refle
 	}
 }
 
-func FindPrimaryKey(obj interface{}) Database.ID {
+func FindPrimaryKey(obj interface{}) database.ID {
 	v, _ := FindFieldWithMetaSubstring(obj, "gorm", "primaryKey")
 	if v == nil {
 		return 0
 	}
-	return  Database.ID(v.Int())
+	return database.ID(v.Int())
 }

@@ -28,8 +28,8 @@ resolver:
 # Optional: set to speed up generation time by not performing a final validation pass.
 # skip_validation: true
 
-autobind:
-  - "main/graph/model"
+#autobind:
+#  - "main/graph/model"
 
 models:
   ID:

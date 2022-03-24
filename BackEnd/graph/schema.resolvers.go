@@ -4,19 +4,20 @@ package graph
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	generated1 "FINRepository/Convert/generated"
-	"FINRepository/Database"
-	"FINRepository/Util"
 	"FINRepository/auth"
+	generated2 "FINRepository/convert/generated"
+	"FINRepository/database"
 	"FINRepository/dataloader"
 	"FINRepository/graph/generated"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
+	"FINRepository/util"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 	"log"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 func (r *mutationResolver) CreatePackage(ctx context.Context, packageArg model.NewPackage) (*model.Package, error) {
@@ -32,11 +33,11 @@ func (r *mutationResolver) DeletePackage(ctx context.Context, packageID graphtyp
 }
 
 func (r *mutationResolver) NewRelease(ctx context.Context, release model.NewRelease) (*model.Release, error) {
-	rel, err := Database.CreateRelease(ctx, Database.ID(release.PackageID), release.Name, release.Description, release.SourceLink, release.Version, release.FinVersion)
+	rel, err := database.CreateRelease(ctx, database.ID(release.PackageID), release.Name, release.Description, release.SourceLink, release.Version, release.FinVersion)
 	if err != nil {
 		return nil, errors.New("Unable to create new release")
 	}
-	conv := generated1.ConverterDBImpl{}
+	conv := generated2.ConverterDBImpl{}
 	return conv.ConvertReleaseP(rel), nil
 }
 
@@ -49,29 +50,29 @@ func (r *mutationResolver) DeleteRelease(ctx context.Context, releaseID graphtyp
 }
 
 func (r *mutationResolver) CreateTag(ctx context.Context, tag model.NewTag) (*model.Tag, error) {
-	dbTag, err := Database.CreateTag(ctx, tag.Name, tag.Description)
+	dbTag, err := database.CreateTag(ctx, tag.Name, tag.Description)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		return nil, errors.New("unable to create tag")
 	}
-	var conv = &generated1.ConverterDBImpl{}
+	var conv = &generated2.ConverterDBImpl{}
 	return conv.ConvertTagP(dbTag), nil
 }
 
 func (r *mutationResolver) UpdateTag(ctx context.Context, tag model.UpdateTag) (bool, error) {
-	return Database.UpdateTag(ctx, Database.ID(tag.ID), tag.Name, tag.Description)
+	return database.UpdateTag(ctx, database.ID(tag.ID), tag.Name, tag.Description)
 }
 
 func (r *mutationResolver) DeleteTag(ctx context.Context, tagID graphtypes.ID) (bool, error) {
-	return Database.DeleteTag(ctx, Database.ID(tagID))
+	return database.DeleteTag(ctx, database.ID(tagID))
 }
 
-func (r *packageResolver) Creator(ctx context.Context, obj *model.Package) (user *model.User, err error) {
-	user, err = dataloader.For(ctx).UserById.Load(obj.Creator.ID)
+func (r *packageResolver) Creator(ctx context.Context, obj *model.Package) (*model.User, error) {
+	user, err := dataloader.For(ctx).UserById.Load(obj.Creator.ID)
 	if err == nil && !auth.AuthorizeVerification(ctx, user) {
 		user = nil
 	}
-	return
+	return user, err
 }
 
 func (r *packageResolver) Tags(ctx context.Context, obj *model.Package) ([]*model.Tag, error) {
@@ -88,7 +89,7 @@ func (r *packageResolver) Releases(ctx context.Context, obj *model.Package) ([]*
 	if err != nil {
 		return releases, err
 	}
-	return auth.AuthorizeReleaseModels(ctx, releases), nil
+	return auth.AuthorizeVerifications(ctx, releases), nil
 }
 
 func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) ([]*model.Package, error) {
@@ -105,7 +106,7 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 	}
 	colFields := graphql.CollectFieldsCtx(ctx, nil)
 
-	var query = Util.DBFromContext(ctx).Scopes(Util.Paginate(page, count))
+	var query = util.DBFromContext(ctx).Scopes(util.Paginate(page, count))
 
 	fields := make([]string, len(colFields))
 	for i, field := range colFields {
@@ -114,16 +115,16 @@ func (r *queryResolver) ListPackages(ctx context.Context, page int, count int) (
 	fields = append(fields, "package_verified")
 	query = query.Select(fields)
 
-	var packages []*Database.Package
+	var packages []*database.Package
 	if err := query.Find(&packages).Error; err != nil {
 		return nil, errors.New("unable to get packages")
 	}
 
 	var packs = make([]*model.Package, len(packages))
-	var conv = generated1.ConverterDBImpl{}
+	var conv = generated2.ConverterDBImpl{}
 	i := 0
 	for _, pack := range packages {
-		if !auth.AuthorizeViewPackage(ctx, pack) {
+		if !auth.AuthorizeVerification(ctx, pack) {
 			continue
 		}
 		p := conv.ConvertPackage(*pack)
@@ -148,7 +149,7 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 	}
 	colFields := graphql.CollectFieldsCtx(ctx, nil)
 
-	var query = Util.DBFromContext(ctx)
+	var query = util.DBFromContext(ctx)
 
 	fields := make([]string, len(colFields))
 	for i, field := range colFields {
@@ -157,15 +158,15 @@ func (r *queryResolver) GetPackagesByID(ctx context.Context, ids []graphtypes.ID
 	fields = append(fields, "package_verified")
 	query = query.Select(fields)
 
-	var packages []*Database.Package
+	var packages []*database.Package
 	if err := query.Find(&packages, ids).Error; err != nil {
 		return nil, errors.New("unable to get packages")
 	}
 
 	var idMap = make(map[graphtypes.ID]*model.Package, len(packages))
-	var conv = generated1.ConverterDBImpl{}
+	var conv = generated2.ConverterDBImpl{}
 	for _, pack := range packages {
-		if !auth.AuthorizeViewPackage(ctx, pack) {
+		if !auth.AuthorizeVerification(ctx, pack) {
 			idMap[graphtypes.ID(pack.ID)] = nil
 		}
 		p := conv.ConvertPackage(*pack)
@@ -193,7 +194,7 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 	}
 	colFields := graphql.CollectFieldsCtx(ctx, nil)
 
-	var query = Util.DBFromContext(ctx)
+	var query = util.DBFromContext(ctx)
 
 	fields := make([]string, len(colFields))
 	for i, field := range colFields {
@@ -201,13 +202,13 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 	}
 	query = query.Select(fields)
 
-	var dbUsers []*Database.User
+	var dbUsers []*database.User
 	if err := query.Find(&dbUsers, ids).Error; err != nil {
 		return nil, errors.New("unable to get idMap")
 	}
 
 	var idMap = make(map[graphtypes.ID]*model.User, len(dbUsers))
-	var conv = generated1.ConverterDBImpl{}
+	var conv = generated2.ConverterDBImpl{}
 	for _, user := range dbUsers {
 		u := conv.ConvertUser(*user)
 		idMap[graphtypes.ID(user.ID)] = &u
@@ -215,7 +216,7 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 	var users = make([]*model.User, len(ids))
 	i := 0
 	for _, id := range ids {
-		if !auth.AuthorizeUserModel(ctx, idMap[id]) {
+		if !auth.AuthorizeVerification(ctx, idMap[id]) {
 			continue
 		}
 		users[i] = idMap[id]
@@ -225,13 +226,13 @@ func (r *queryResolver) GetUsersByID(ctx context.Context, ids []graphtypes.ID) (
 }
 
 func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
-	dbTags, err := Database.GetTags(Util.DBFromContext(ctx))
+	dbTags, err := database.GetTags(util.DBFromContext(ctx))
 	if err != nil {
 		log.Printf("Error: %v", err)
 		return nil, errors.New("unable to get all tags")
 	}
 	editTags := auth.AuthorizeManageTags(ctx)
-	conv := generated1.ConverterDBImpl{}
+	conv := generated2.ConverterDBImpl{}
 	mTags := make([]*model.Tag, len(*dbTags))
 	i := 0
 	for _, tag := range *dbTags {
@@ -243,12 +244,12 @@ func (r *queryResolver) GetAllTags(ctx context.Context) ([]*model.Tag, error) {
 	return mTags[:i], nil
 }
 
-func (r *releaseResolver) Package(ctx context.Context, obj *model.Release) (pack *model.Package, err error) {
-	pack, err = dataloader.For(ctx).PackageById.Load(obj.ID)
-	if err == nil && !auth.AuthorizePackageModel(ctx, pack) {
+func (r *releaseResolver) Package(ctx context.Context, obj *model.Release) (*model.Package, error) {
+	pack, err := dataloader.For(ctx).PackageById.Load(obj.ID)
+	if err == nil && !auth.AuthorizeVerification(ctx, pack) {
 		pack = nil
 	}
-	return
+	return pack, err
 }
 
 func (r *tagResolver) Packages(ctx context.Context, obj *model.Tag) ([]*model.Package, error) {
@@ -257,7 +258,7 @@ func (r *tagResolver) Packages(ctx context.Context, obj *model.Tag) ([]*model.Pa
 		return nil, err
 	}
 	packages, _ := dataloader.For(ctx).PackageById.LoadAll(packagesId)
-	return packages, nil
+	return auth.AuthorizeVerifications(ctx, packages), nil
 }
 
 func (r *userResolver) Packages(ctx context.Context, obj *model.User) ([]*model.Package, error) {

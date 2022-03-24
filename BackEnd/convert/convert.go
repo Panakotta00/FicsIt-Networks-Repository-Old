@@ -1,9 +1,9 @@
-package Convert
+package convert
 
 //go:generate go run github.com/jmattheis/goverter/cmd/goverter FINRepository/Convert
 
 import (
-	"FINRepository/Database"
+	"FINRepository/database"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
 )
@@ -14,31 +14,31 @@ import (
 type ConverterDB interface {
 	// goverter:ignore Releases
 	// goverter:map CreatorID Creator
-	ConvertPackage(Database.Package) model.Package
-	ConvertPackageP(*Database.Package) *model.Package
+	ConvertPackage(database.Package) model.Package
+	ConvertPackageP(*database.Package) *model.Package
 
 	// goverter:ignore Packages
 	// goverter:map EMail Email
-	ConvertUser(Database.User) model.User
-	ConvertUserP(*Database.User) *model.User
+	ConvertUser(database.User) model.User
+	ConvertUserP(*database.User) *model.User
 
-	ConvertTag(Database.Tag) model.Tag
-	ConvertTagP(*Database.Tag) *model.Tag
-	ConvertTagA([]Database.Tag) []model.Tag
-	ConvertTagPA([]*Database.Tag) []*model.Tag
+	ConvertTag(database.Tag) model.Tag
+	ConvertTagP(*database.Tag) *model.Tag
+	ConvertTagA([]database.Tag) []model.Tag
+	ConvertTagPA([]*database.Tag) []*model.Tag
 
 	// goverter:map PackageID Package
 	// goverter:map FINVersion FinVersion
-	ConvertRelease(Database.Release) model.Release
-	ConvertReleaseP(*Database.Release) *model.Release
-	ConvertReleaseA([]Database.Release) []model.Release
+	ConvertRelease(database.Release) model.Release
+	ConvertReleaseP(*database.Release) *model.Release
+	ConvertReleaseA([]database.Release) []model.Release
 }
 
-func UserIdToUser(id Database.ID) model.User {
+func UserIdToUser(id database.ID) model.User {
 	return model.User{ID: graphtypes.ID(id)}
 }
 
-func PackageIdToPackage(id Database.ID) model.Package {
+func PackageIdToPackage(id database.ID) model.Package {
 	return model.Package{ID: graphtypes.ID(id)}
 }
 
@@ -48,20 +48,20 @@ type ConverterModel interface {
 	// goverter:map Creator CreatorID
 	// goverter:ignore CreatorS
 	// goverter:ignore Tags
-	ConvertPackage(model.Package) Database.Package
-	ConvertPackageP(*model.Package) *Database.Package
+	ConvertPackage(model.Package) database.Package
+	ConvertPackageP(*model.Package) *database.Package
 
 	// goverter:ignore ID
 	// goverter:ignore Package
 	// goverter:ignore Hash
 	// goverter:ignore Verified
 	// goverter:map FinVersion FINVersion
-	ConvertNewRelease(model.NewRelease) Database.Release
+	ConvertNewRelease(model.NewRelease) database.Release
 }
 
-func UserToUserId(creator *model.User) Database.ID {
+func UserToUserId(creator *model.User) database.ID {
 	if creator == nil {
 		return 0
 	}
-	return Database.ID(creator.ID)
+	return database.ID(creator.ID)
 }

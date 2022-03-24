@@ -25,3 +25,15 @@ func (u *User) GetID() string {
 func (u *User) IsVerified() bool {
 	return u.Verified
 }
+
+func (p *Package) GetType() string {
+	return "package"
+}
+
+func (p *Package) GetID() string {
+	return strconv.FormatInt(int64(p.ID), 10)
+}
+
+func (p *Package) IsVerified() bool {
+	return p.Verified
+}

@@ -1,12 +1,12 @@
 package dataloader
 
 import (
-	"FINRepository/Convert/generated"
-	"FINRepository/Database"
-	"FINRepository/Database/Cache"
-	"FINRepository/Util"
+	"FINRepository/convert/generated"
+	"FINRepository/database"
+	"FINRepository/database/cache"
 	"FINRepository/graph/graphtypes"
 	"FINRepository/graph/model"
+	"FINRepository/util"
 	"context"
 	"errors"
 	"github.com/labstack/echo/v4"
@@ -44,18 +44,18 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 				fetch: func(ids []graphtypes.ID) (users []*model.User, errs []error) {
 					users = make([]*model.User, len(ids))
 					errs = make([]error, len(ids))
-					dbCache := Cache.DBCacheFromCtx(ctx)
+					dbCache := cache.DBCacheFromCtx(ctx)
 
 					// try to load users from cache
 					var idsToQueryMap = map[graphtypes.ID]int{}
 					var idsToQuery []graphtypes.ID
 					for i, id := range ids {
-						if user := dbCache.GetByPK(&Database.User{}, Database.ID(id)); user == nil {
+						if user := dbCache.GetByPK(&database.User{}, database.ID(id)); user == nil {
 							idsToQueryMap[id] = i
 							idsToQuery = append(idsToQuery, id)
 						} else {
 							conv := generated.ConverterDBImpl{}
-							users[i] = conv.ConvertUserP((*user).(*Database.User))
+							users[i] = conv.ConvertUserP((*user).(*database.User))
 						}
 					}
 					if len(idsToQuery) < 1 {
@@ -63,8 +63,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					}
 
 					// query non-cached users from DB
-					var dbUsers []*Database.User
-					if err := Util.DBFromContext(ctx).Find(&dbUsers, idsToQuery).Error; err != nil {
+					var dbUsers []*database.User
+					if err := util.DBFromContext(ctx).Find(&dbUsers, idsToQuery).Error; err != nil {
 						e := errors.New("unable to get users by ids")
 						for i := 0; i < len(ids); i++ {
 							errs[i] = e
@@ -98,8 +98,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					errs = make([]error, len(ids))
 					packageTags = make([][]graphtypes.ID, len(ids))
 
-					var dbTags []*Database.PackageTag
-					if err := Util.DBFromContext(ctx).Where("package_id IN ?", ids).Find(&dbTags).Error; err != nil {
+					var dbTags []*database.PackageTag
+					if err := util.DBFromContext(ctx).Where("package_id IN ?", ids).Find(&dbTags).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get tags for packages by package ids")
 						for i := 0; i < len(ids); i++ {
@@ -127,8 +127,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					errs = make([]error, len(ids))
 					tags = make([]*model.Tag, len(ids))
 
-					var dbTags []*Database.Tag
-					if err := Util.DBFromContext(ctx).Find(&dbTags, ids).Error; err != nil {
+					var dbTags []*database.Tag
+					if err := util.DBFromContext(ctx).Find(&dbTags, ids).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get tags by tag ids")
 						for i := 0; i < len(ids); i++ {
@@ -156,8 +156,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					releases = make([][]*model.Release, len(ids))
 					errs = make([]error, len(ids))
 
-					var dbReleases []*Database.Release
-					if err := Util.DBFromContext(ctx).Where("package_id IN ?", ids).Find(&dbReleases).Error; err != nil {
+					var dbReleases []*database.Release
+					if err := util.DBFromContext(ctx).Where("package_id IN ?", ids).Find(&dbReleases).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get releases by package ids")
 						for i := 0; i < len(ids); i++ {
@@ -186,8 +186,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					packages = make([]*model.Package, len(ids))
 					errs = make([]error, len(ids))
 
-					var dbPackages []*Database.Package
-					if err := Util.DBFromContext(ctx).Find(&dbPackages, ids).Error; err != nil {
+					var dbPackages []*database.Package
+					if err := util.DBFromContext(ctx).Find(&dbPackages, ids).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get packages by package ids")
 						for i := 0; i < len(ids); i++ {
@@ -214,8 +214,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					errs = make([]error, len(ids))
 					tagPackages = make([][]graphtypes.ID, len(ids))
 
-					var dbTags []*Database.PackageTag
-					if err := Util.DBFromContext(ctx).Where("tag_id IN ?", ids).Find(&dbTags).Error; err != nil {
+					var dbTags []*database.PackageTag
+					if err := util.DBFromContext(ctx).Where("tag_id IN ?", ids).Find(&dbTags).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get packages for tags by tag ids")
 						for i := 0; i < len(ids); i++ {
@@ -243,8 +243,8 @@ func Middleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 					packages = make([][]*model.Package, len(ids))
 					errs = make([]error, len(ids))
 
-					var dbPackages []*Database.Package
-					if err := Util.DBFromContext(ctx).Where("package_creator_id IN ?", ids).Find(&dbPackages).Error; err != nil {
+					var dbPackages []*database.Package
+					if err := util.DBFromContext(ctx).Where("package_creator_id IN ?", ids).Find(&dbPackages).Error; err != nil {
 						log.Printf("Error: %v", err)
 						e := errors.New("unable to get packages by user ids")
 						for i := 0; i < len(ids); i++ {

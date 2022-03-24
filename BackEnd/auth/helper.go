@@ -1,14 +1,14 @@
 package auth
 
 import (
-	"FINRepository/Database"
 	"FINRepository/auth/perm"
+	"FINRepository/database"
 	"FINRepository/graph/model"
 	"context"
 )
 
 func AuthorizeViewAll(ctx context.Context, obj perm.Authorizable) bool {
-	user := Database.UserFromCtx(ctx)
+	user := database.UserFromCtx(ctx)
 	if user == nil {
 		return false
 	}
@@ -44,7 +44,7 @@ func AuthorizeVerifications[V Verifiable](ctx context.Context, objs []V) []V {
 }
 
 func AuthorizeManageTags(ctx context.Context) bool {
-	user := Database.UserFromCtx(ctx)
+	user := database.UserFromCtx(ctx)
 	if user == nil {
 		return false
 	}
@@ -59,7 +59,7 @@ func AuthorizeTagModel(ctx context.Context, r *model.Tag) bool {
 		return true
 	}
 
-	return Database.AuthorizeCtx(ctx, &perm.Global, "edit_tags")
+	return database.AuthorizeCtx(ctx, &perm.Global, "edit_tags")
 }
 
 func AuthorizeTagModels(ctx context.Context, tags []*model.Tag) []*model.Tag {

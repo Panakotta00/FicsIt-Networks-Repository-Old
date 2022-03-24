@@ -4,6 +4,6 @@
 # Generate Go Files
 dataloader/*
 !dataloader/dataloader.go
-Convert/generated
+convert/generated
 graph/generated
 graph/model/models_gen.go

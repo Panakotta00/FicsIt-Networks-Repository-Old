@@ -1,8 +1,8 @@
-package Cache
+package cache
 
 import (
-	"FINRepository/Database"
-	UtilReflection "FINRepository/Util/Reflection"
+	"FINRepository/database"
+	utilReflection "FINRepository/util/reflection"
 	"context"
 	"reflect"
 	"sync"
@@ -11,7 +11,7 @@ import (
 
 type cacheEntryKey struct {
 	Type reflect.Type
-	ID   Database.ID
+	ID   database.ID
 }
 
 type cacheEntryValue struct {
@@ -39,7 +39,7 @@ func (dbCache *DatabaseCache) GetDefaultExpire() time.Time {
 }
 
 func (dbCache *DatabaseCache) Add(obj interface{}) {
-	pk := UtilReflection.FindPrimaryKey(obj)
+	pk := utilReflection.FindPrimaryKey(obj)
 	if pk == 0 {
 		return
 	}
@@ -52,14 +52,14 @@ func (dbCache *DatabaseCache) Add(obj interface{}) {
 }
 
 func (dbCache *DatabaseCache) Get(obj interface{}) *interface{} {
-	pk := UtilReflection.FindPrimaryKey(obj)
+	pk := utilReflection.FindPrimaryKey(obj)
 	if pk == 0 {
 		return nil
 	}
 	return dbCache.GetByPK(obj, pk)
 }
 
-func (dbCache *DatabaseCache) GetByPK(obj interface{}, pk Database.ID) *interface{} {
+func (dbCache *DatabaseCache) GetByPK(obj interface{}, pk database.ID) *interface{} {
 	key := cacheEntryKey{reflect.TypeOf(obj), pk}
 	cached, ok := dbCache.cache[key]
 	if !ok {

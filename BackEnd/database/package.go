@@ -1,7 +1,7 @@
-package Database
+package database
 
 import (
-	"FINRepository/Util"
+	"FINRepository/util"
 	"gorm.io/gorm"
 	"log"
 	"strconv"
@@ -32,6 +32,10 @@ func (p *Package) GetID() string {
 	return strconv.FormatInt(int64(p.ID), 10)
 }
 
+func (p *Package) IsVerified() bool {
+	return p.Verified
+}
+
 type PackageChange struct {
 	ID          ID       `json:"id" gorm:"column:package_change_id;not null;primaryKey"`
 	Name        *string  `json:"name" gorm:"column:package_name"`
@@ -56,7 +60,7 @@ func (PackageTag) TableName() string {
 
 func ListPackages(db *gorm.DB, page int, count int) (*[]*Package, error) {
 	var packages *[]*Package
-	if err := db.Scopes(Util.Paginate(page, count)).Find(&packages).Error; err != nil {
+	if err := db.Scopes(util.Paginate(page, count)).Find(&packages).Error; err != nil {
 		return nil, err
 	}
 	return packages, nil
@@ -89,7 +93,7 @@ func GetPackageTags(db *gorm.DB, packageId int64) (*[]*Tag, error) {
 
 func ListPackageReleases(db *gorm.DB, packageId int64, page int, count int) (*[]*Release, error) {
 	var releases *[]*Release
-	if err := db.Scopes(Util.Paginate(page, count)).Where("package_id = ?", packageId).Find(&releases).Error; err != nil {
+	if err := db.Scopes(util.Paginate(page, count)).Where("package_id = ?", packageId).Find(&releases).Error; err != nil {
 		return nil, err
 	}
 	return releases, nil

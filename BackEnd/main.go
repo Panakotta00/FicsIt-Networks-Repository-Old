@@ -1,14 +1,14 @@
 package main
 
 import (
-	"FINRepository/Database"
-	"FINRepository/Database/Cache"
-	"FINRepository/Util"
 	"FINRepository/auth"
 	"FINRepository/auth/perm"
+	"FINRepository/database"
+	"FINRepository/database/cache"
 	"FINRepository/dataloader"
 	"FINRepository/graph"
 	"FINRepository/graph/generated"
+	"FINRepository/util"
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -29,8 +29,8 @@ import (
 var db *gorm.DB
 
 func listPackages(c echo.Context) error {
-	page, count := Util.GetPagination(c)
-	packages, err := Database.ListPackages(db, page, count)
+	page, count := util.GetPagination(c)
+	packages, err := database.ListPackages(db, page, count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list packages")
 	}
@@ -38,12 +38,12 @@ func listPackages(c echo.Context) error {
 }
 
 func getPackage(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
-	var pack *Database.Package
+	id, err := util.GetSnowflake(c, "id")
+	var pack *database.Package
 	if err == nil {
-		pack, err = Database.GetPackageByID(db, id)
+		pack, err = database.GetPackageByID(db, id)
 	} else {
-		pack, err = Database.GetPackageByName(db, c.Param("id"))
+		pack, err = database.GetPackageByName(db, c.Param("id"))
 	}
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "package not found")
@@ -52,11 +52,11 @@ func getPackage(c echo.Context) error {
 }
 
 func getPackageTags(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
+	id, err := util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
 	}
-	tags, err := Database.GetPackageTags(db, id)
+	tags, err := database.GetPackageTags(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "package not found")
 	}
@@ -64,12 +64,12 @@ func getPackageTags(c echo.Context) error {
 }
 
 func listPackageReleases(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
+	id, err := util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid package-id format")
 	}
-	page, count := Util.GetPagination(c)
-	releases, err := Database.ListPackageReleases(db, id, page, count)
+	page, count := util.GetPagination(c)
+	releases, err := database.ListPackageReleases(db, id, page, count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "package not found")
 	}
@@ -77,7 +77,7 @@ func listPackageReleases(c echo.Context) error {
 }
 
 func getTags(c echo.Context) error {
-	tags, err := Database.GetTags(db)
+	tags, err := database.GetTags(db)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "unable to get all tags")
 	}
@@ -85,11 +85,11 @@ func getTags(c echo.Context) error {
 }
 
 func getTag(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
+	id, err := util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid tag-id format")
 	}
-	tag, err := Database.TagGet(db, id)
+	tag, err := database.TagGet(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "tag not found")
 	}
@@ -97,11 +97,11 @@ func getTag(c echo.Context) error {
 }
 
 func getRelease(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
+	id, err := util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid release-id format")
 	}
-	release, err := Database.ReleaseGet(db, id)
+	release, err := database.ReleaseGet(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "release not found")
 	}
@@ -109,8 +109,8 @@ func getRelease(c echo.Context) error {
 }
 
 func listUsers(c echo.Context) error {
-	page, count := Util.GetPagination(c)
-	users, err := Database.ListUsers(db, page, count)
+	page, count := util.GetPagination(c)
+	users, err := database.ListUsers(db, page, count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list users")
 	}
@@ -118,11 +118,11 @@ func listUsers(c echo.Context) error {
 }
 
 func getUser(c echo.Context) error {
-	id, err := Util.GetSnowflake(c, "id")
+	id, err := util.GetSnowflake(c, "id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid user-id format")
 	}
-	user, err := Database.UserGet(db, id)
+	user, err := database.UserGet(db, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
@@ -180,12 +180,12 @@ func main() {
 		log.Fatal("failed to connect database: %v", err)
 	}
 
-	err = db.SetupJoinTable(&Database.Package{}, "Tags", &Database.PackageTag{})
+	err = db.SetupJoinTable(&database.Package{}, "Tags", &database.PackageTag{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&Database.User{}, &Database.UserChange{}, &Database.Package{}, &Database.PackageChange{}, &Database.Tag{}, &Database.Release{}, &Database.ReleaseChange{})
+	err = db.AutoMigrate(&database.User{}, &database.UserChange{}, &database.Package{}, &database.PackageChange{}, &database.Tag{}, &database.Release{}, &database.ReleaseChange{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func main() {
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			newCtx := Util.ContextWithDB(ctx.Request().Context(), db)
+			newCtx := util.ContextWithDB(ctx.Request().Context(), db)
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			return next(ctx)
 		}
@@ -242,7 +242,7 @@ func main() {
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			newCtx := Cache.CtxWithDBCache(ctx.Request().Context())
+			newCtx := cache.CtxWithDBCache(ctx.Request().Context())
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			return next(ctx)
 		}

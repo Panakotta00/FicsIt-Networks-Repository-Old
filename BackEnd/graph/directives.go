@@ -1,12 +1,12 @@
 package graph
 
 import (
-	"FINRepository/Convert/generic"
-	"FINRepository/Database"
-	"FINRepository/Util"
-	UtilReflection "FINRepository/Util/Reflection"
 	"FINRepository/auth/perm"
+	"FINRepository/convert/generic"
+	"FINRepository/database"
 	"FINRepository/graph/model"
+	"FINRepository/util"
+	utilReflection "FINRepository/util/reflection"
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
@@ -27,7 +27,7 @@ func modelByName(modelName string) interface{} {
 }
 
 func IsAdminDirective(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
-	user := ctx.Value("auth").(*Database.User)
+	user := ctx.Value("auth").(*database.User)
 
 	if user == nil || !user.Admin {
 		return nil, fmt.Errorf("Access denied")
@@ -37,7 +37,7 @@ func IsAdminDirective(ctx context.Context, obj interface{}, next graphql.Resolve
 }
 
 func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.Resolver, owningField string) (interface{}, error) {
-	user := ctx.Value("auth").(*Database.User)
+	user := ctx.Value("auth").(*database.User)
 
 	if user == nil {
 		return nil, fmt.Errorf("Access denied")
@@ -48,14 +48,14 @@ func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.R
 	}
 
 	if reflect.TypeOf(obj) == reflect.TypeOf(&model.User{}) {
-		if Database.ID(obj.(*model.User).ID) == user.ID {
+		if database.ID(obj.(*model.User).ID) == user.ID {
 			return next(ctx)
 		} else {
 			return nil, fmt.Errorf("Access denied")
 		}
 	}
 
-	db := Util.DBFromContext(ctx)
+	db := util.DBFromContext(ctx)
 
 	// TODO: Use at boot generated LookUp-Tables instead of direct field search for json
 	owningFields := strings.Split(owningField, ".")
@@ -81,7 +81,7 @@ func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.R
 			value := objValue.MapIndex(reflect.ValueOf(fieldName)).Elem()
 			fieldValue = &value
 		} else {
-			fieldValue, _ = UtilReflection.FindFieldWithMeta(currentObj, "json", fieldName)
+			fieldValue, _ = utilReflection.FindFieldWithMeta(currentObj, "json", fieldName)
 		}
 		if fieldValue == nil {
 			return nil, fmt.Errorf("Access denied")
@@ -105,7 +105,7 @@ func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.R
 		case reflect.Ptr:
 			if fieldValue.IsNil() {
 				var dbObj = generic.ConvertToDatabase(currentObj)
-				if err := db.Find(&dbObj, UtilReflection.FindPrimaryKey(dbObj)).Error; err != nil {
+				if err := db.Find(&dbObj, utilReflection.FindPrimaryKey(dbObj)).Error; err != nil {
 					return nil, fmt.Errorf("Unable to authorize")
 				}
 				currentObj = generic.ConvertToModel(dbObj)
@@ -123,7 +123,7 @@ func OwnsOrIsAdminDirective(ctx context.Context, obj interface{}, next graphql.R
 }
 
 func PermissionDirective(ctx context.Context, obj interface{}, next graphql.Resolver, permission string) (interface{}, error) {
-	user := ctx.Value("auth").(*Database.User)
+	user := ctx.Value("auth").(*database.User)
 
 	if user == nil {
 		return nil, fmt.Errorf("Access denied")

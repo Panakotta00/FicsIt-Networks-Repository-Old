@@ -1,4 +1,4 @@
-package Database
+package database
 
 import (
 	"FINRepository/auth/perm"

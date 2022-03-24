@@ -1,8 +1,8 @@
-package Database
+package database
 
 import (
-	"FINRepository/Util"
 	"FINRepository/auth/perm"
+	"FINRepository/util"
 	"context"
 	"gorm.io/gorm"
 	"strconv"
@@ -46,7 +46,7 @@ func ReleaseGet(db *gorm.DB, releaseId int64) (*Release, error) {
 }
 
 func CreateRelease(ctx context.Context, packageId ID, name string, description string, sourceURL string, version string, finVersion string) (*Release, error) {
-	id := Util.GetSnowflakeFromCTX(ctx).Generate().Int64()
+	id := util.GetSnowflakeFromCTX(ctx).Generate().Int64()
 	authorizer := perm.AuthorizerFromCtx(ctx)
 	release := Release{
 		ID:          ID(id),
@@ -62,6 +62,6 @@ func CreateRelease(ctx context.Context, packageId ID, name string, description s
 		return nil, err
 	}
 	release.ZedToken = token
-	err = Util.DBFromContext(ctx).Create(&release).Error
+	err = util.DBFromContext(ctx).Create(&release).Error
 	return &release, err
 }

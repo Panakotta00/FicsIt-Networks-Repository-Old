@@ -1,7 +1,7 @@
-package Database
+package database
 
 import (
-	"FINRepository/Util"
+	"FINRepository/util"
 	"gorm.io/gorm"
 	"strconv"
 )
@@ -42,7 +42,7 @@ func (UserChange) TableName() string {
 
 func ListUsers(db *gorm.DB, page int, count int) (*[]*User, error) {
 	var users *[]*User
-	if err := db.Scopes(Util.Paginate(page, count)).Find(&users).Error; err != nil {
+	if err := db.Scopes(util.Paginate(page, count)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

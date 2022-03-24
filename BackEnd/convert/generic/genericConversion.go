@@ -1,8 +1,8 @@
 package generic
 
 import (
-	"FINRepository/Convert/generated"
-	database "FINRepository/Database"
+	"FINRepository/convert/generated"
+	database "FINRepository/database"
 	"FINRepository/graph/model"
 )
 

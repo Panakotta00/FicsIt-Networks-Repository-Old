@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"FINRepository/Database"
-	"FINRepository/Database/Cache"
-	"FINRepository/Util"
 	"FINRepository/auth/perm"
+	"FINRepository/database"
+	"FINRepository/database/cache"
+	"FINRepository/util"
 	"context"
 	"errors"
 	"fmt"
@@ -27,11 +27,11 @@ type TokenClaims struct {
 	jwt.StandardClaims
 	Username string      `json:"username"`
 	EMail    string      `json:"email"`
-	ID       Database.ID `json:"id"`
+	ID       database.ID `json:"id"`
 }
 
 func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	finish := func(ctx echo.Context, user *Database.User) error {
+	finish := func(ctx echo.Context, user *database.User) error {
 		newCtx := context.WithValue(ctx.Request().Context(), "auth", user)
 		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 		return next(ctx)
@@ -60,13 +60,13 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusForbidden, "failed to verify token")
 		}
 
-		var user Database.User
-		if err := Util.DBFromContext(ctx.Request().Context()).Find(&user, tokenClaims.ID).Error; err != nil {
+		var user database.User
+		if err := util.DBFromContext(ctx.Request().Context()).Find(&user, tokenClaims.ID).Error; err != nil {
 			ctx.SetCookie(&http.Cookie{Name: "token", RawExpires: "-1"})
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get authenticated user")
 		}
 
-		newCtx := Cache.CtxWithDBAuthCache(ctx.Request().Context())
+		newCtx := cache.CtxWithDBAuthCache(ctx.Request().Context())
 		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 		return finish(ctx, &user)
@@ -75,12 +75,12 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 func AuthenticateUser(c echo.Context, email string, username string) (string, error) {
 	ctx := c.Request().Context()
-	var user Database.User
-	query := Util.DBFromContext(ctx).Where("user_email = ?", email).Find(&user)
+	var user database.User
+	query := util.DBFromContext(ctx).Where("user_email = ?", email).Find(&user)
 	if err := query.Error; err != nil || query.RowsAffected < 1 {
 		// no existing account found, try to create one
-		user = Database.User{
-			ID:    Database.ID(Util.GetSnowflakeFromCTX(ctx).Generate().Int64()),
+		user = database.User{
+			ID:    database.ID(util.GetSnowflakeFromCTX(ctx).Generate().Int64()),
 			Name:  username,
 			EMail: email,
 		}
@@ -95,7 +95,7 @@ func AuthenticateUser(c echo.Context, email string, username string) (string, er
 			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
 		}
 		user.ZedToken = token
-		if err = Util.DBFromContext(ctx).Create(&user).Error; err != nil {
+		if err = util.DBFromContext(ctx).Create(&user).Error; err != nil {
 			log.Printf("Error Auth User: %e", err)
 			return "", echo.NewHTTPError(http.StatusInternalServerError, "Unable to authenticate user or create new user account")
 		}
@@ -168,7 +168,7 @@ func OAuth2Request(ctx echo.Context) error {
 			return nil, errors.New("expecting JWT header to have string kid")
 		}
 
-		// TODO: Cache
+		// TODO: cache
 		var response, err = http.Get(jwkGoogleURL)
 		if err != nil {
 			return nil, errors.New("unable to get google-auth keys")
